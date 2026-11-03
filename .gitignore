@@ -241,3 +241,6 @@ veri/oznitelikler/
 # Yukarıdaki *.parquet vb. kurallarını bu klasör için geri alıyoruz.
 !veri/ornek/
 !veri/ornek/**
+
+# Çalışma/referans belgeleri (promptlar vb.) git'e girmesin
+*.pdf

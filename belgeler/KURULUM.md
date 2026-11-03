@@ -49,6 +49,20 @@ Tüm satırlar **TAMAM** olmalı. HATA varsa çıktıyı not alıp
 - ArduPlane 4.7 ile bazı parametreler `SRn_*` yerine `MAVn_*` adıyla geçer; bu
   normaldir.
 
+## Pop!_OS 22.04 kullanıyorsanız
+
+- Pop!_OS 22.04, Ubuntu 22.04 ("jammy") tabanlıdır (`ID_LIKE=ubuntu`,
+  `VERSION_ID=22.04`). `setup.sh` ve ArduPilot'un `install-prereqs-ubuntu.sh`
+  betiği burada Ubuntu 22.04 gibi çalışır; ek bir işlem gerekmez.
+- `lsb_release -cs` çıktısı `jammy` olmalıdır. Farklı bir şey dönerse ArduPilot
+  ön gereksinim betiği şaşırabilir; bu durumda çıktıyı paylaşın.
+
+## Üç makinenin sürümü aynı değilse
+
+- Ekipte 22.04 (Pop!_OS dahil) ve 24.04 karışık olabilir. ArduPlane **kaynaktan
+  Plane-4.7.2'de** derlendiği için işletim sistemi sürüm farkı sonuçları
+  etkilemez — önemli olan üç makinede de **aynı ArduPlane etiketi**dir.
+
 ## WSL kullanıyorsanız
 
 - Kurulum ve komut satırı sorunsuz çalışır.
