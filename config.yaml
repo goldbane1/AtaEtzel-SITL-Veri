@@ -1,0 +1,40 @@
+# =====================================================================
+# AtaEtzel — SITL Veri Üretimi Yapılandırması
+# ---------------------------------------------------------------------
+# Bu dosya, tüm betiklerin ortak ayarlarını tutar. Her kişi KENDİ
+# makinesinde yalnızca "pc_id" ve "ucus_no_araligi" alanlarını
+# değiştirir; geri kalanı üç bilgisayarda da AYNI kalmalıdır.
+#
+# Üç bilgisayar düzeni (uçuş numarası çakışmasını önler):
+#   pc1 -> F100-F199   (ucus_no_araligi: [100, 199])
+#   pc2 -> F200-F299   (ucus_no_araligi: [200, 299])
+#   pc3 -> F300-F399   (ucus_no_araligi: [300, 399])
+# =====================================================================
+
+# Bu makinenin kimliği. Seçenekler: pc1, pc2, pc3.
+# Dosya adları ve uçuş numaraları bu değere göre ayrışır.
+pc_id: pc1
+
+# Bu makineye ait uçuş numarası aralığı [alt, ust] (her ikisi de dahil).
+# pc1 için 100-199, pc2 için 200-299, pc3 için 300-399 olmalıdır.
+ucus_no_araligi: [100, 199]
+
+# Simülasyonun çalıştığı ana makine. Her şey yerel (localhost) içindir.
+host: "127.0.0.1"
+
+# Yer istasyonu/saldırgan betiklerinin yazdığı UDP portu (ortak telsiz kanalı).
+udp_port: 14550
+
+# ArduPlane SITL'nin dinlediği TCP portu (otopilota giden kablo).
+tcp_port: 5760
+
+# SITL'nin temel TCP portu (ileride birden çok araç için taban değer).
+sitl_port_base: 5760
+
+# Uçuş klasörlerinin yazılacağı kök dizin (repo köküne göre).
+veri_klasoru: "veri/ucuslar"
+
+# Ham baytları (raw_hex) parquet'e yaz. replay saldırısı ve etiketleme
+# bu alana ihtiyaç duyar. Dosyayı küçültmek için false yapılabilir,
+# ancak o zaman replay.py çalışmaz.
+raw_hex_kaydet: true

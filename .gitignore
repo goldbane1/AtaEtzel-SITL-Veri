@@ -218,3 +218,26 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# =====================================================================
+# AtaEtzel SITL Veri Üretimi — projeye özel kurallar
+# Ham uçuş verisi git'e GİRMEZ (parquet/tlog/BIN dosyaları büyüktür).
+# Repoda yalnızca kod, belge ve çok küçük örnek veri bulunur.
+# =====================================================================
+
+# Üretilen ham/işlenmiş uçuş verileri
+veri/ucuslar/
+veri/oznitelikler/
+
+# Veri dosyası türleri (her yerde dışlanır)
+*.parquet
+*.tlog
+*.BIN
+
+# Python sanal ortamı (bu repoya özel)
+.venv/
+
+# İSTİSNA: veri/ornek/ altındaki küçük örnek dosyalar git'e GİRSİN.
+# Yukarıdaki *.parquet vb. kurallarını bu klasör için geri alıyoruz.
+!veri/ornek/
+!veri/ornek/**

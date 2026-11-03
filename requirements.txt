@@ -1,0 +1,11 @@
+# AtaEtzel — SITL veri üretimi için Python bağımlılıkları.
+# Sürümler bilerek sabitlenmedi; setup.sh en güncel kararlı sürümleri kurar.
+# (pymavlink ve MAVProxy ArduPilot'un install-prereqs betiği tarafından da
+#  kurulabilir; burada repo sanal ortamı için yeniden belirtiyoruz.)
+
+pymavlink      # MAVLink paketlerini çözümleme/oluşturma
+mavproxy       # Yer istasyonu (test ve manuel kontrol için)
+pandas         # parquet okuma/yazma ve öznitelik hesabı
+numpy          # sayısal işlemler
+pyarrow        # pandas için parquet motoru
+pyyaml         # config.yaml okuma
