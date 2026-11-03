@@ -1,5 +1,7 @@
 # Kurulum (KURULUM.md)
 
+> 🧭 **Aşama 1–2 / 5** · [Yol haritası](../README.md#yol-haritası--neyi-hangi-sırayla) · Sonraki aşama → [VERI_URETIMI.md](VERI_URETIMI.md)
+
 Bu rehber `setup.sh`'ın ne yaptığını adım adım açıklar. Kurulumu **bir kişi tek
 makinede** baştan sona yapsın; repo çalışır hale gelince diğerleri yalnızca
 klonlayıp `setup.sh` çalıştırır.

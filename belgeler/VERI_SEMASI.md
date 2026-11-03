@@ -1,5 +1,7 @@
 # Veri Şeması (Ortak Sözleşme)
 
+> 🧭 **Başvuru belgesi** (sıralı akışın parçası değil) · [Yol haritası](../README.md#yol-haritası--neyi-hangi-sırayla)
+
 Tüm betikler **aynı dosya adlarını ve aynı sütunları** kullanır. Bu bölüm,
 projedeki bütün parçaların dayandığı ortak sözleşmedir. Dosya/sütun adları
 kendiliğinden değiştirilmez.

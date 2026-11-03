@@ -1,5 +1,7 @@
 # Veri Paylaşımı (VERI_PAYLASIMI.md)
 
+> 🧭 **Aşama 5 / 5** · [Yol haritası](../README.md#yol-haritası--neyi-hangi-sırayla) · Önceki → [VERI_URETIMI.md](VERI_URETIMI.md)
+
 Üç bilgisayarda üretilen uçuşlar tek bir veri setinde birleştirilir. Ham veri
 git'e **konmaz**; bu rehber nasıl paylaşılacağını anlatır.
 

@@ -1,5 +1,7 @@
 # Veri Üretimi — Uçtan Uca Oturum (VERI_URETIMI.md)
 
+> 🧭 **Aşama 3–4 / 5** · [Yol haritası](../README.md#yol-haritası--neyi-hangi-sırayla) · Önceki → [KURULUM.md](KURULUM.md) · Sonraki → [VERI_PAYLASIMI.md](VERI_PAYLASIMI.md)
+
 Bu rehber, bir veri üretim oturumunu baştan sona anlatır. Kaç terminal, hangi
 sıra ile ne çalıştırılır ve hangi uçuşlar üretilir.
 

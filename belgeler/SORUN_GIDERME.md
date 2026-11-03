@@ -1,5 +1,7 @@
 # Sorun Giderme (SORUN_GIDERME.md)
 
+> 🧭 **Başvuru belgesi** (sıralı akışın parçası değil) · [Yol haritası](../README.md#yol-haritası--neyi-hangi-sırayla)
+
 Her sorun için **belirti → neden → çözüm** verilmiştir.
 
 ## `sim_vehicle.py: command not found`

@@ -12,6 +12,32 @@ etiketli bir veri seti hazırlamaktır.
 
 ---
 
+## Yol haritası — neyi hangi sırayla?
+
+Proje **beş aşamadan** oluşur. Sırayı bozmayın: bir aşama bitmeden sonrakine
+geçmeyin. Her aşamada okunacak belge ve çalıştırılacak komut aşağıda.
+
+| # | Aşama | Ne yaparsınız | Belge | Ana komut |
+|---|-------|---------------|-------|-----------|
+| 1 | **Kurulum** | ArduPlane + bağımlılıkları kurar | [KURULUM.md](belgeler/KURULUM.md) | `bash setup.sh` |
+| 2 | **Sağlık kontrolü** | Kurulum eksiksiz mi, doğrular | [KURULUM.md](belgeler/KURULUM.md) | `python betikler/kontrol.py` |
+| 3 | **Veri üretimi** | Normal + saldırılı uçuşlar üretir | [VERI_URETIMI.md](belgeler/VERI_URETIMI.md) | `normal_uretim.sh` / `saldiri_uret.sh` |
+| 4 | **İşleme** | Etiketler, öznitelik çıkarır, böler, doğrular | [VERI_URETIMI.md](belgeler/VERI_URETIMI.md) | `etiketle → oznitelik → bol → dogrula` |
+| 5 | **Paylaşım** | Üç makinenin verisini birleştirir | [VERI_PAYLASIMI.md](belgeler/VERI_PAYLASIMI.md) | — |
+
+**Her an başvurulabilecek (sıralı değil) belgeler:**
+
+- [VERI_SEMASI.md](belgeler/VERI_SEMASI.md) — dosya/sütun sözleşmesi. Betikler
+  buna uyar; bir çıktı "yanlış" görünüyorsa önce buraya bakın.
+- [SORUN_GIDERME.md](belgeler/SORUN_GIDERME.md) — bir komut hata verirse ilk
+  durağınız.
+
+> **İlk kez mi kuruyorsunuz?** Aşağıdaki *Hızlı başlangıç* (Aşama 1–2) ile
+> başlayın; sonra Aşama 3 için [VERI_URETIMI.md](belgeler/VERI_URETIMI.md)'ye
+> geçin.
+
+---
+
 ## Hızlı başlangıç
 
 ```bash
