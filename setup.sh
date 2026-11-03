@@ -29,11 +29,34 @@ hata()   { echo "[HATA] $*" >&2; }
 trap 'hata "Kurulum bir adımda durdu. Yukarıdaki son hatayı inceleyin."' ERR
 
 bilgi "0/6 Ortam kontrol ediliyor..."
+# /etc/os-release'ten dağıtım bilgisini oku (ID, ID_LIKE, VERSION_ID gelir).
 . /etc/os-release 2>/dev/null || true
 echo "       Dağıtım: ${PRETTY_NAME:-bilinmiyor}"
-if [[ "${VERSION_ID:-}" != "22.04" && "${VERSION_ID:-}" != "24.04" ]]; then
-  echo "[UYARI] Bu betik Ubuntu 22.04/24.04 için test edildi; sürümünüz farklı olabilir."
+
+# Kod adını al (Ubuntu'da jammy=22.04, noble=24.04; Pop!_OS 24.04'te de noble döner).
+KOD_ADI="$(lsb_release -cs 2>/dev/null || echo "${VERSION_CODENAME:-}")"
+echo "       Kod adı: ${KOD_ADI:-bilinmiyor}"
+
+# Pop!_OS'ta ID=pop, ID_LIKE=ubuntu olur; Ubuntu türevi mi diye ID ve ID_LIKE'a bak.
+if [[ "${ID:-}" == "ubuntu" || " ${ID_LIKE:-} " == *" ubuntu "* ]]; then
+  echo "       Ubuntu tabanlı bir dağıtım algılandı (ID=${ID:-?}, ID_LIKE=${ID_LIKE:-yok})."
+else
+  echo "[UYARI] Ubuntu tabanlı bir dağıtım algılanamadı (ID=${ID:-?}, ID_LIKE=${ID_LIKE:-yok})."
+  echo "        Yine de devam ediliyor; nihai kararı ArduPilot'un install-prereqs betiği verecek."
 fi
+
+# Kod adı kontrolü SERT BİR ENGEL DEĞİL: jammy/noble sorunsuz devam eder,
+# diğerlerinde yalnızca Türkçe uyarı verilir (kurulum durdurulmaz).
+case "${KOD_ADI:-}" in
+  jammy|noble)
+    echo "       Desteklenen kod adı (${KOD_ADI}); devam ediliyor." ;;
+  "")
+    echo "[UYARI] Kod adı tespit edilemedi; kurulum yine de denenecek." ;;
+  *)
+    echo "[UYARI] '${KOD_ADI}' jammy/noble değil; test edilmedi."
+    echo "        Kurulum yine de denenecek, desteklenip desteklenmediğine"
+    echo "        ArduPilot'un install-prereqs-ubuntu.sh betiği karar verecek." ;;
+esac
 
 bilgi "1/6 apt bağımlılıkları kuruluyor (sudo gerekebilir)..."
 sudo apt-get update

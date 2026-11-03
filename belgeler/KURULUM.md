@@ -49,13 +49,19 @@ Tüm satırlar **TAMAM** olmalı. HATA varsa çıktıyı not alıp
 - ArduPlane 4.7 ile bazı parametreler `SRn_*` yerine `MAVn_*` adıyla geçer; bu
   normaldir.
 
-## Pop!_OS 22.04 kullanıyorsanız
+## Pop!_OS 22.04 / 24.04 kullanıyorsanız
 
-- Pop!_OS 22.04, Ubuntu 22.04 ("jammy") tabanlıdır (`ID_LIKE=ubuntu`,
-  `VERSION_ID=22.04`). `setup.sh` ve ArduPilot'un `install-prereqs-ubuntu.sh`
-  betiği burada Ubuntu 22.04 gibi çalışır; ek bir işlem gerekmez.
-- `lsb_release -cs` çıktısı `jammy` olmalıdır. Farklı bir şey dönerse ArduPilot
-  ön gereksinim betiği şaşırabilir; bu durumda çıktıyı paylaşın.
+- Pop!_OS, Ubuntu tabanlıdır (`/etc/os-release` içinde `ID=pop` ve
+  `ID_LIKE=ubuntu`). `setup.sh`, `ID` `ubuntu` olmasa bile `ID_LIKE` içinde
+  `ubuntu` geçtiği için dağıtımı Ubuntu türevi olarak kabul eder ve devam eder;
+  ek bir işlem gerekmez.
+- Pop!_OS 22.04/24.04 kullananlarda `lsb_release -cs` **`jammy`** veya
+  **`noble`** dönebilir; ikisi de desteklenir. ArduPlane sürümü (Plane-4.7.2)
+  tüm makinelerde aynı olduğu sürece işletim sistemi tabanının farklı olması
+  sorun değildir.
+- `setup.sh` kod adı kontrolünü sert bir engel yapmaz: `jammy`/`noble`'da
+  sorunsuz devam eder, başka bir kod adında yalnızca Türkçe bir uyarı verip yine
+  de dener. Nihai kararı ArduPilot'un `install-prereqs-ubuntu.sh` betiği verir.
 
 ## Üç makinenin sürümü aynı değilse
 
