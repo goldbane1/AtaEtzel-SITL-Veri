@@ -9,3 +9,4 @@ pandas         # parquet okuma/yazma ve öznitelik hesabı
 numpy          # sayısal işlemler
 pyarrow        # pandas için parquet motoru
 pyyaml         # config.yaml okuma
+pytest         # SITL gerektirmeyen otomatik testler (tests/ klasörü)

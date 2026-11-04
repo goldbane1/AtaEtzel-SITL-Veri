@@ -48,6 +48,9 @@ güvenlik duvarı modeli için etiketli veri seti. Model ve panel bu reponun
 5. **Veri şeması sözleşmedir:** `belgeler/VERI_SEMASI.md`'deki dosya ve sütun
    adları kendiliğinden değiştirilmez. Değişiklik gerekiyorsa önce kullanıcıya
    sor, sonra şema belgesini + tüm betikleri birlikte güncelle.
+   **Not:** `belgeler/YOL_HARITASI.md`'de listelenen şema değişiklikleri
+   onaylanmıştır; `VERI_SEMASI.md`'yi birlikte güncelle. Listede olmayan şema
+   değişikliği için yine sor.
 6. **Veri sızıntısı:** `src_ip`, `src_port`, `raw_hex` **asla öznitelik
    olmaz** (`oznitelik.py`'ye eklenmez). Yalnızca etiketleme ve replay içindir.
 7. `config.yaml`'da her makine yalnızca `pc_id` ve `ucus_no_araligi`'nı
@@ -87,8 +90,9 @@ Saldırı betikleri (localhost)─┘          (her paketi kaydeder)
 | `belgeler/` | Türkçe rehberler (aşağıda) |
 
 **Belgeler:** `KURULUM.md` → `VERI_URETIMI.md` → `VERI_PAYLASIMI.md` (sıralı);
-`VERI_SEMASI.md` ve `SORUN_GIDERME.md` başvuru belgeleri. Bir konuda çalışmadan
-önce ilgili belgeyi oku; kodu değiştirirsen belgeyi de güncelle.
+`VERI_SEMASI.md`, `SORUN_GIDERME.md` ve `UCUS_NUMARALARI.md` başvuru belgeleri;
+`YOL_HARITASI.md` görev takibinin tek doğru kaynağı. Bir konuda çalışmadan önce
+ilgili belgeyi oku; kodu değiştirirsen belgeyi de güncelle.
 
 ## 6. Sık kullanılan komutlar
 
@@ -112,9 +116,11 @@ python betikler/bol.py
 python betikler/dogrula.py --hepsi
 ```
 
-Test paketi yok; doğrulama `kontrol.py`, `dogrula.py` ve gerçek SITL
-çalıştırmasıyla yapılır. Statik kontrol için: `python -m py_compile betikler/*.py
-betikler/saldirilar/*.py` ve `bash -n betikler/*.sh`.
+Testler `tests/` altında pytest ile yazılır ve `pytest tests/` ile çalışır.
+**Her görev SITL gerektirmeyen testler ekler.** Gerçek uçuş davranışı ayrıca
+`kontrol.py`, `dogrula.py` ve gerçek SITL çalıştırmasıyla doğrulanır. Statik
+kontrol için: `python -m py_compile betikler/*.py betikler/saldirilar/*.py` ve
+`bash -n betikler/*.sh`.
 
 ## 7. Ekip ve makineler
 
@@ -148,21 +154,20 @@ ve README'yi güncelle).
 
 ## 8. Güncel durum
 
-> Bu bölüm ilerledikçe güncellenmeli (asistan, bir aşama bitince kullanıcıya
-> sorup burayı güncellesin ve commit'lesin).
+Projenin güncel durumu ve yapılacak işler için **tek doğru kaynak
+`belgeler/YOL_HARITASI.md`'dir**. Durumu buraya yazma, orayı güncelle.
 
-- **Tamamlandı:** Kod + belgeler, statik doğrulamalar, GitHub'a push
-  (`goldbane1/AtaEtzel-SITL-Veri`). `setup.sh` Pop!_OS uyumlu.
-- **Henüz yapılmadı:** Gerçek SITL üzerinde **uçtan uca ilk test**.
-- **Sıradaki adım:** `bash setup.sh` → `python betikler/kontrol.py` → ilk normal
-  uçuş → ilk saldırılı uçuş → işleme hattı (etiketle/oznitelik/bol/dogrula).
-- **En olası ince ayar noktası:** `ucus_yap.py` içindeki kalkış/AUTO akışı
-  (gerçek SITL'de ilk kez denenecek). Sorun çıkarsa `belgeler/SORUN_GIDERME.md`'ye
-  çözümü ekle.
+**"Sıradaki görev" kuralı:** Kullanıcı "sıradaki görev" dediğinde
+`YOL_HARITASI.md`'deki ilk işaretlenmemiş görevi yap. Bitince: tüm testleri
+çalıştır, kabul ölçütünü kontrol et, kutucuğu `[x]` yap, tarihi ve kısa bir not
+yaz, Türkçe commit at, sonra dur ve kullanıcıya özet ver. Kabul ölçütü
+sağlanmazsa kutucuğu işaretleme, nedenini yaz.
 
 ## 9. Git
 
 - Ana dal `main`. Commit mesajları Türkçe, kısa ve emir kipinde
   (ör. "Kurulumu Pop!_OS için uyumlu hale getir").
-- Kullanıcı istemeden commit/push yapma. Ham veri dosyalarını asla ekleme
+- Yol haritası işleri `veri-duzeltmeleri` branch'ine commit'lenir.
+- Kullanıcı istemeden commit/push yapma. Tek istisna: "sıradaki görev" o görevin
+  commit'ine izin verir, **push'a değil**. Ham veri dosyalarını asla ekleme
   (`git status`'ta `.parquet`/`.tlog`/`.BIN` görürsen dur ve uyar).
