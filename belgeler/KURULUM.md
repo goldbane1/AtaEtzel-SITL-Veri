@@ -8,7 +8,9 @@ klonlayıp `setup.sh` çalıştırır.
 
 ## Gereksinimler
 
-- Ubuntu **22.04** veya **24.04** (WSL2 dahil)
+- Standart desteği süren bir Ubuntu: **22.04**, **24.04** veya **26.04**
+  (WSL2 dahil) ya da bunlara dayanan **Pop!_OS**. Ubuntu **20.04 ve öncesi
+  desteklenmez** (ArduPilot'un kuralı).
 - İnternet erişimi (ArduPilot ve pip paketleri için)
 - ~5 GB boş disk, derleme için birkaç GB RAM
 
@@ -20,13 +22,21 @@ bash setup.sh
 
 ## `setup.sh` ne yapıyor?
 
+0. **Ortam kontrolü:** Dağıtımın Ubuntu tabanlı olup olmadığına (`ID` veya
+   `ID_LIKE` içinde `ubuntu`) ve Ubuntu taban sürümüne bakar. Yalnızca 20.04
+   ve öncesi gibi desteği bitmiş bir sürümde Türkçe uyarı verip durur; diğer
+   her durumda devam eder.
 1. **apt bağımlılıkları:** `git`, `python3`, `python3-venv`, `python3-dev`,
    `build-essential`, `ccache`, `rsync`.
 2. **ArduPilot (Plane-4.7.2):** `~/ardupilot`'a `--branch Plane-4.7.2` ile klonlar.
    Zaten varsa klonlamayı atlar, etikete geçer ve submodule'leri günceller.
 3. **Ön gereksinimler:** ArduPilot'un `Tools/environment_install/
    install-prereqs-ubuntu.sh -y` betiğini çalıştırır — MAVProxy ve pymavlink'i
-   sistem geneline bu kurar.
+   sistem geneline bu kurar. Bu betik hata verirse (ör. çok yeni bir Ubuntu
+   kod adını henüz tanımıyorsa) kurulum **durmaz**: `setup.sh` Türkçe uyarı
+   verir ve temel paketleri (`python3-venv`, `build-essential`, `ccache`,
+   `python3-wxgtk4.0`, `python3-dev`, `libtool`, `pkg-config`) yedek adım
+   olarak tek tek kurmayı dener. O sürümde bulunmayan paket atlanır.
 4. **Derleme:** `./waf configure --board sitl && ./waf plane` (15–30 dk).
 5. **Repo sanal ortamı:** `.venv` oluşturur ve `requirements.txt`'i kurar.
 6. **Özet:** Yolları ve sonraki adımı (sağlık kontrolü) yazar.
@@ -51,33 +61,48 @@ Tüm satırlar **TAMAM** olmalı. HATA varsa çıktıyı not alıp
 kullandığı, neden önemli olduğu ve ayarın git'e gitmemesi için yapılacaklar:
 [UCUS_NUMARALARI.md](UCUS_NUMARALARI.md) (5. bölüm).
 
-## Ubuntu 22.04 ve 24.04 farkları
+## Desteklenen işletim sistemleri
 
-- Her iki sürümde de `install-prereqs-ubuntu.sh` çalışır. 24.04'te bazı Python
-  paketleri "externally managed" uyarısı verebilir; repo bağımlılıkları **.venv**
-  içine kurulduğu için bu bizi etkilemez.
+> **Ubuntu 22.04 / 24.04 / 26.04 ve Pop!_OS desteklenir.** İşletim sistemini
+> yükselttikten sonra (ör. 24.04 → 26.04) ArduPilot ön gereksinim adımı
+> yeniden çalıştırılmalıdır:
+>
+> ```bash
+> cd ~/ardupilot && Tools/environment_install/install-prereqs-ubuntu.sh -y
+> ```
+>
+> ArduPlane sürümü (Plane-4.7.2) tüm makinelerde aynı olduğu sürece,
+> makinelerin farklı Ubuntu tabanında olması üretilen veriyi etkilemez.
+
+- **Kural:** `setup.sh` belirli sürümlerle sınırlı değildir. ArduPilot'un
+  kuralını izler: *standart desteği süren her Ubuntu* desteklenir, 20.04 ve
+  öncesi desteklenmez. Hangi Ubuntu'nun gerçekten desteklendiğine ArduPilot'un
+  kendi `install-prereqs-ubuntu.sh` betiği karar verir.
+- **Yeni çıkmış bir sürüm** (ör. 26.04'ten sonraki) kullanıyorsanız `setup.sh`
+  yine devam eder. ArduPilot betiği kod adını tanımazsa yedek adım devreye
+  girer (yukarıda 3. madde); derleme hata verirse çıktıyı not alıp
+  [SORUN_GIDERME.md](SORUN_GIDERME.md)'ye bakın.
+- 24.04 ve sonrasında bazı Python paketleri "externally managed" uyarısı
+  verebilir; repo bağımlılıkları **.venv** içine kurulduğu için bu bizi
+  etkilemez.
 - ArduPlane 4.7 ile bazı parametreler `SRn_*` yerine `MAVn_*` adıyla geçer; bu
   normaldir.
 
-## Pop!_OS 22.04 / 24.04 kullanıyorsanız
+## Pop!_OS kullanıyorsanız
 
 - Pop!_OS, Ubuntu tabanlıdır (`/etc/os-release` içinde `ID=pop` ve
-  `ID_LIKE=ubuntu`). `setup.sh`, `ID` `ubuntu` olmasa bile `ID_LIKE` içinde
-  `ubuntu` geçtiği için dağıtımı Ubuntu türevi olarak kabul eder ve devam eder;
-  ek bir işlem gerekmez.
-- Pop!_OS 22.04/24.04 kullananlarda `lsb_release -cs` **`jammy`** veya
-  **`noble`** dönebilir; ikisi de desteklenir. ArduPlane sürümü (Plane-4.7.2)
-  tüm makinelerde aynı olduğu sürece işletim sistemi tabanının farklı olması
-  sorun değildir.
-- `setup.sh` kod adı kontrolünü sert bir engel yapmaz: `jammy`/`noble`'da
-  sorunsuz devam eder, başka bir kod adında yalnızca Türkçe bir uyarı verip yine
-  de dener. Nihai kararı ArduPilot'un `install-prereqs-ubuntu.sh` betiği verir.
+  `ID_LIKE="ubuntu debian"`). `setup.sh`, `ID` `ubuntu` olmasa bile `ID_LIKE`
+  içinde `ubuntu` geçtiği için dağıtımı Ubuntu türevi olarak kabul eder ve
+  devam eder; ek bir işlem gerekmez.
+- Ubuntu taban sürümü `UBUNTU_CODENAME` alanından okunur (Pop!_OS 22.04 →
+  `jammy`, 24.04 → `noble`). Linux Mint gibi kendi sürüm numarasını kullanan
+  türevlerde de bu sayede doğru Ubuntu tabanı bulunur.
 
-## Üç makinenin sürümü aynı değilse
+## Makinelerin sürümü aynı değilse
 
-- Ekipte 22.04 (Pop!_OS dahil) ve 24.04 karışık olabilir. ArduPlane **kaynaktan
+- Ekipte 22.04, 24.04, 26.04 ve Pop!_OS karışık olabilir. ArduPlane **kaynaktan
   Plane-4.7.2'de** derlendiği için işletim sistemi sürüm farkı sonuçları
-  etkilemez — önemli olan üç makinede de **aynı ArduPlane etiketi**dir.
+  etkilemez — önemli olan tüm makinelerde **aynı ArduPlane etiketi**dir.
 
 ## WSL kullanıyorsanız
 
