@@ -1,0 +1,154 @@
+# AGENTS.md — Yapay zekâ asistanları için proje rehberi
+
+> Bu dosya, bu repoyu açan **her kodlama asistanı** (Claude Code, Codex, Cursor,
+> Copilot, Gemini CLI vb.) için yazılmıştır. Claude Code bunu `CLAUDE.md`
+> üzerinden otomatik okur. İnsanlar için giriş noktası `README.md`'dir.
+
+## 1. Proje nedir?
+
+**AtaEtzel** ekibinin bitirme projesi: *"Sabit Kanatlı İHA'lar için MAVLink
+Haberleşmesine Yönelik Siber Saldırı Tespit ve Müdahale Sistemi"*.
+
+Bu repo bütünün yalnızca **veri üretimi** kısmıdır:
+
+1. ArduPlane SITL'de **normal** ve (yalnızca simülasyon içi, localhost)
+   **saldırılı** uçuşlar üretilir.
+2. MAVLink trafiği bir **kayıt proxy'si** (`betikler/kayit_proxy.py`) ile iki
+   yönde kaydedilir → `paketler.parquet`.
+3. Paketler etiketlenir, 1 sn'lik öznitelik pencereleri çıkarılır, uçuş
+   düzeyinde eğitim/doğrulama/test bölmesi yapılır.
+
+Amaç: ileride eğitilecek **savunma amaçlı** bir saldırı tespit (IDS) / MAVLink
+güvenlik duvarı modeli için etiketli veri seti. Model ve panel bu reponun
+**dışındadır**.
+
+5 saldırı türü: `spoof_cmd`, `impersonation`, `replay`, `flood`, `fake_telemetry`.
+
+## 2. İletişim kuralları
+
+- **Her şey Türkçe**: kullanıcıyla konuşma, kod yorumları, log/hata mesajları,
+  belgeler, commit mesajları.
+- Ekip öğrenci; açıklamaları **sade ve adım adım** yap, teknik terimleri kısaca
+  aç. Komut önerirken ne işe yaradığını bir cümleyle söyle.
+- Değişken/fonksiyon adları da Türkçe (ASCII) tutulur: `ucus_klasoru`,
+  `config_oku`, `localhost_dogrula` … Mevcut stile uy.
+
+## 3. Değişmez kurallar (çiğneme!)
+
+1. **Güvenlik / etik:** Saldırı betikleri yalnızca `127.0.0.1`'e bağlanır.
+   `betikler/ortak.py` içindeki `localhost_mu` / `localhost_dogrula` kontrolü
+   **silinmez, gevşetilmez, atlanmaz**. Dış ağa veya gerçek araca saldıran kod
+   yazılmaz. Bu bir savunma projesidir.
+2. **ArduPlane sürümü sabit: `Plane-4.7.2`.** Üç makinede aynı etiket olmalı;
+   sürüm yükseltme önerme.
+3. **Ham veri git'e girmez:** `*.parquet`, `*.tlog`, `*.BIN`, `veri/ucuslar/`,
+   `veri/oznitelikler/` (`.gitignore`'da). İstisna: `veri/ornek/` altındaki
+   çok küçük örnekler.
+4. **`--speedup` kullanılmaz** (zaman damgaları/öznitelikler gerçek zamana göre).
+5. **Veri şeması sözleşmedir:** `belgeler/VERI_SEMASI.md`'deki dosya ve sütun
+   adları kendiliğinden değiştirilmez. Değişiklik gerekiyorsa önce kullanıcıya
+   sor, sonra şema belgesini + tüm betikleri birlikte güncelle.
+6. **Veri sızıntısı:** `src_ip`, `src_port`, `raw_hex` **asla öznitelik
+   olmaz** (`oznitelik.py`'ye eklenmez). Yalnızca etiketleme ve replay içindir.
+7. `config.yaml`'da her makine yalnızca `pc_id` ve `ucus_no_araligi`'nı
+   değiştirir; diğer alanlar üç makinede aynı kalır.
+
+## 4. Mimari (kısaca)
+
+```
+GCS (ucus_yap.py / MAVProxy) ─┐
+                              ├─ UDP 14550 ─> [kayit_proxy.py] ─ TCP 5760 ─> ArduPlane SITL
+Saldırı betikleri (localhost)─┘          (her paketi kaydeder)
+```
+
+- `gcs2uav`: 14550'ye gelen paket → SITL'ye iletilir.
+- `uav2gcs`: SITL telemetrisi → 14550'ye yazmış tüm adreslere geri döner.
+- Saldırgan ile meşru GCS'yi etiketlemede ayıran şey `src_ip:src_port`
+  (`ground_truth.json` içindeki `attacker_addr`) + zaman aralığıdır.
+
+## 5. Dosya haritası
+
+| Yol | Görevi |
+|-----|--------|
+| `config.yaml` | pc_id, uçuş aralığı, portlar, veri klasörü |
+| `setup.sh` | Baştan sona kurulum (ArduPilot `~/ardupilot`'a, `.venv`) |
+| `betikler/ortak.py` | Ortak yardımcılar + **localhost güvenlik kontrolü** |
+| `betikler/kontrol.py` | Kurulum sağlık kontrolü (TAMAM/HATA) |
+| `betikler/kayit_proxy.py` | MAVLink kayıt proxy'si (projenin kalbi) |
+| `betikler/ucus_yap.py` | Görev yükler, arm/AUTO/kalkış, uçurur |
+| `betikler/normal_uretim.sh` | Tek komutla normal uçuş |
+| `betikler/saldiri_uret.sh` | Tek komutla saldırılı uçuş |
+| `betikler/saldirilar/*.py` | 5 saldırı + `saldiri_temel.py` (ortak argümanlar, ground_truth yazımı) |
+| `betikler/etiketle.py` | `label` sütunu ekler |
+| `betikler/oznitelik.py` | 1 sn pencere öznitelikleri → `veri/oznitelikler/pencereler.parquet` |
+| `betikler/bol.py` | Uçuş düzeyinde katmanlı bölme → `veri/bolme.csv` |
+| `betikler/dogrula.py` | Uçuş klasörü eksiksizlik kontrolü |
+| `gorevler/*.waypoints` | 5 görev dosyası |
+| `belgeler/` | Türkçe rehberler (aşağıda) |
+
+**Belgeler:** `KURULUM.md` → `VERI_URETIMI.md` → `VERI_PAYLASIMI.md` (sıralı);
+`VERI_SEMASI.md` ve `SORUN_GIDERME.md` başvuru belgeleri. Bir konuda çalışmadan
+önce ilgili belgeyi oku; kodu değiştirirsen belgeyi de güncelle.
+
+## 6. Sık kullanılan komutlar
+
+```bash
+bash setup.sh                         # kurulum (15-30 dk, ArduPlane derler)
+source .venv/bin/activate
+python betikler/kontrol.py            # hepsi TAMAM olmalı
+
+# Ayrı terminalde SITL:
+cd ~/ardupilot/ArduPlane && sim_vehicle.py -v ArduPlane --no-mavproxy
+
+# Normal uçuş: <ucus_id> <gorev> [sure] ...
+bash betikler/normal_uretim.sh F101_normal gorevler/gorev1_dikdortgen.waypoints 180 3 90
+# Saldırılı uçuş: <ucus_id> <gorev> <saldiri> [sure] [saldiri_sure] [gecikme] [ekstra...]
+bash betikler/saldiri_uret.sh F106_spoof_cmd gorevler/gorev1_dikdortgen.waypoints spoof_cmd 180 30 60
+
+# İşleme hattı
+python betikler/etiketle.py --hepsi
+python betikler/oznitelik.py --hepsi
+python betikler/bol.py
+python betikler/dogrula.py --hepsi
+```
+
+Test paketi yok; doğrulama `kontrol.py`, `dogrula.py` ve gerçek SITL
+çalıştırmasıyla yapılır. Statik kontrol için: `python -m py_compile betikler/*.py
+betikler/saldirilar/*.py` ve `bash -n betikler/*.sh`.
+
+## 7. Ekip ve makineler
+
+Üç kişi paralel üretir; uçuş numaraları çakışmasın diye:
+
+| pc_id | Uçuş aralığı | Örnek | Not |
+|-------|--------------|-------|-----|
+| pc1 | F100–F199 | `F101_normal` | Batuhan — Pop!_OS 22.04 (jammy tabanlı) |
+| pc2 | F200–F299 | `F205_spoof_cmd` | Ekip arkadaşı — Ubuntu 22.04 |
+| pc3 | F300–F399 | `F312_flood` | Ekip arkadaşı — Ubuntu 24.04 |
+
+Uçuş adı biçimi: `F<numara>_<tür>` (tür: `normal` veya saldırı adı).
+Bir oturumun başında `config.yaml`'daki `pc_id`'nin o makineye uygun olduğunu
+kontrol et; değilse kullanıcıya hangi PC olduğunu sor. Aynı kişi birden fazla
+cihazda (ör. masaüstü + laptop) üretim yapıyorsa aralığı **bölüşmeleri**
+gerekir (ör. pc1 masaüstü F100–F149, laptop F150–F199) — kullanıcıya hatırlat.
+
+## 8. Güncel durum
+
+> Bu bölüm ilerledikçe güncellenmeli (asistan, bir aşama bitince kullanıcıya
+> sorup burayı güncellesin ve commit'lesin).
+
+- **Tamamlandı:** Kod + belgeler, statik doğrulamalar, GitHub'a push
+  (`goldbane1/AtaEtzel-SITL-Veri`). `setup.sh` Pop!_OS uyumlu.
+- **Henüz yapılmadı:** Gerçek SITL üzerinde **uçtan uca ilk test**.
+- **Sıradaki adım:** `bash setup.sh` → `python betikler/kontrol.py` → ilk normal
+  uçuş → ilk saldırılı uçuş → işleme hattı (etiketle/oznitelik/bol/dogrula).
+- **En olası ince ayar noktası:** `ucus_yap.py` içindeki kalkış/AUTO akışı
+  (gerçek SITL'de ilk kez denenecek). Sorun çıkarsa `belgeler/SORUN_GIDERME.md`'ye
+  çözümü ekle.
+
+## 9. Git
+
+- Ana dal `main`. Commit mesajları Türkçe, kısa ve emir kipinde
+  (ör. "Kurulumu Pop!_OS için uyumlu hale getir").
+- Kullanıcı istemeden commit/push yapma. Ham veri dosyalarını asla ekleme
+  (`git status`'ta `.parquet`/`.tlog`/`.BIN` görürsen dur ve uyar).
