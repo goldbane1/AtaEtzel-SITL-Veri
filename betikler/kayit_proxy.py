@@ -326,6 +326,8 @@ def main() -> int:
 
     cfg = ortak.config_oku()
     ucus_id = args.ucus or ortak.sonraki_ucus_id("normal", cfg)
+    # Çakışma koruması: numara bu cihazın aralığında mı, daha önce kullanıldı mı?
+    ortak.ucus_id_dogrula(ucus_id, cfg, yeni_kayit=True)
 
     proxy = KayitProxy(ucus_id, cfg)
 

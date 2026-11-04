@@ -43,6 +43,14 @@ python betikler/kontrol.py
 Tüm satırlar **TAMAM** olmalı. HATA varsa çıktıyı not alıp
 [SORUN_GIDERME.md](SORUN_GIDERME.md)'ye bakın.
 
+## Cihazınızın uçuş numarası aralığını ayarlayın (zorunlu)
+
+`config.yaml`'da `pc_id` ve `ucus_no_araligi`'nı kendi cihazınıza göre ayarlayın
+(ör. 2. kişi: `pc_id: pc2`, `ucus_no_araligi: [200, 299]`), sonra
+`python betikler/kontrol.py`'yi tekrar çalıştırın. Kimin hangi aralığı
+kullandığı, neden önemli olduğu ve ayarın git'e gitmemesi için yapılacaklar:
+[UCUS_NUMARALARI.md](UCUS_NUMARALARI.md) (5. bölüm).
+
 ## Ubuntu 22.04 ve 24.04 farkları
 
 - Her iki sürümde de `install-prereqs-ubuntu.sh` çalışır. 24.04'te bazı Python

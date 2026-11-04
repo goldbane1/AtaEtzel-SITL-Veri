@@ -60,6 +60,14 @@ Her sorun için **belirti → neden → çözüm** verilmiştir.
 - **Çözüm:** `config.yaml`'da `host: "127.0.0.1"` olmalı. Bu kontrol betiklerin
   dış ağa çıkmasını engeller; **silmeyin**.
 
+## "bu cihazın numara aralığında DEĞİL" / "zaten kullanılmış" / "config.yaml uyumsuz"
+- **Neden:** Uçuş adı bu cihaza ait değil, daha önce kullanılmış ya da
+  `config.yaml`'daki `pc_id` ile `ucus_no_araligi` birbirini tutmuyor. Bu
+  kontroller veri kaybını önlemek için **bilerek** konmuştur.
+- **Çözüm:** Hata mesajındaki "sıradaki boş ad"ı kullanın veya
+  `python betikler/ortak.py --sonraki <tür>` çalıştırın. Ayrıntı ve tüm
+  durumlar: [UCUS_NUMARALARI.md](UCUS_NUMARALARI.md).
+
 ## `ground_truth.json` oluşmuyor
 - **Neden:** Saldırı betiği hiç çalışmadı veya `--ucus` adı proxy'nin uçuşuyla
   aynı değil.

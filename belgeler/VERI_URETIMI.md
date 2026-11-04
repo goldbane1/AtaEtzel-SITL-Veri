@@ -8,6 +8,13 @@ sıra ile ne çalıştırılır ve hangi uçuşlar üretilir.
 > **Ön koşul:** `python betikler/kontrol.py` hepsini TAMAM diyor olmalı.
 > Her terminalde önce `source .venv/bin/activate` çalıştırın.
 
+> **Uçuş numaraları:** Bu belgedeki örnekler (`F101_normal`, `F106_spoof_cmd`
+> …) **pc1 numaralarıdır**. Siz kendi aralığınızdan numara kullanın; sıradaki
+> boş adı şöyle öğrenin: `python betikler/ortak.py --sonraki normal`
+> (saldırılı uçuşta `normal` yerine saldırı adı). Yanlış/kullanılmış numarada
+> betik hiçbir şey başlatmadan durur. Ayrıntı:
+> [UCUS_NUMARALARI.md](UCUS_NUMARALARI.md).
+
 ## Terminal düzeni
 
 | Terminal | Ne çalışır |

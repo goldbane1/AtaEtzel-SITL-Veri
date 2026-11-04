@@ -31,6 +31,9 @@ geçmeyin. Her aşamada okunacak belge ve çalıştırılacak komut aşağıda.
   buna uyar; bir çıktı "yanlış" görünüyorsa önce buraya bakın.
 - [SORUN_GIDERME.md](belgeler/SORUN_GIDERME.md) — bir komut hata verirse ilk
   durağınız.
+- [UCUS_NUMARALARI.md](belgeler/UCUS_NUMARALARI.md) — uçuş adları, kimin hangi
+  numara aralığını kullandığı ve çakışmanın nasıl önlendiği. **Üretimden önce
+  bir kez mutlaka okunur.**
 
 > **İlk kez mi kuruyorsunuz?** Aşağıdaki *Hızlı başlangıç* (Aşama 1–2) ile
 > başlayın; sonra Aşama 3 için [VERI_URETIMI.md](belgeler/VERI_URETIMI.md)'ye
@@ -48,6 +51,9 @@ bash setup.sh
 # 2) Sağlık kontrolü
 source .venv/bin/activate
 python betikler/kontrol.py        # hepsi TAMAM olmalı
+
+# 3) config.yaml'da pc_id ve ucus_no_araligi'nı KENDİ cihazına göre ayarla
+#    (bkz. belgeler/UCUS_NUMARALARI.md)
 ```
 
 Ayrıntılar: [belgeler/KURULUM.md](belgeler/KURULUM.md).
@@ -121,17 +127,29 @@ setup.sh            Baştan sona kurulum
 
 ---
 
-## Üç bilgisayar düzeni
+## Üç bilgisayar düzeni ve uçuş numaraları
 
-Üç kişi aynı anda üretim yapınca dosya adları çakışmasın diye her makineye bir
-uçuş numarası aralığı verilir. Her kişi yalnızca `config.yaml`'daki `pc_id` ve
+> ⚠️ **Üretime başlamadan önce herkes okusun:**
+> [belgeler/UCUS_NUMARALARI.md](belgeler/UCUS_NUMARALARI.md). Uçuş numarası
+> çakışırsa veriler birleştirilirken bir uçuş **sessizce kaybolur**.
+
+Her uçuşun adı `F<numara>_<tür>` biçimindedir ve **numara tüm ekipte bir kez**
+kullanılır. Bunun için her kişiye bir yüzlük blok, her **cihaza** bu blok içinde
+ayrı bir aralık verilir. Her cihaz `config.yaml`'da yalnızca `pc_id` ve
 `ucus_no_araligi`'nı ayarlar.
 
-| Bilgisayar | `pc_id` | Uçuş aralığı | Örnek |
-|-----------|---------|--------------|-------|
-| 1. PC | `pc1` | F100–F199 | `F101_normal` |
-| 2. PC | `pc2` | F200–F299 | `F205_spoof_cmd` |
-| 3. PC | `pc3` | F300–F399 | `F312_flood` |
+| Kişi / cihaz | `pc_id` | `ucus_no_araligi` | Örnek |
+|--------------|---------|-------------------|-------|
+| Batuhan — masaüstü | `pc1` | `[100, 149]` | `F101_normal` |
+| Batuhan — laptop | `pc1` | `[150, 199]` | `F151_flood` |
+| 2. kişi | `pc2` | `[200, 299]` | `F205_spoof_cmd` |
+| 3. kişi | `pc3` | `[300, 399]` | `F312_flood` |
+
+- Sıradaki boş adı öğrenmek için: `python betikler/ortak.py --sonraki normal`
+- Üretim betikleri yanlış/kullanılmış bir numarada **hiçbir şey başlatmadan
+  durur** ve doğru adı söyler.
+- Belgelerdeki örnek komutlar pc1 numaralarıyla yazılmıştır; pc2/pc3 kendi
+  numarasını kullanır.
 
 Veri birleştirme: [belgeler/VERI_PAYLASIMI.md](belgeler/VERI_PAYLASIMI.md).
 

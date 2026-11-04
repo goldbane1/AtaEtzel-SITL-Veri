@@ -190,6 +190,141 @@ def sonraki_ucus_id(ad_son_eki: str = "normal", cfg: dict | None = None) -> str:
 
 
 # ---------------------------------------------------------------------
+# Uçuş numarası ÇAKIŞMA KORUMASI
+# ---------------------------------------------------------------------
+# Üç (veya daha fazla) cihaz aynı anda üretim yapar. Veriler sonunda tek
+# bir klasörde birleştirileceği için iki cihazın aynı uçuş adını (ör.
+# F101_normal) üretmesi, birleştirmede bir uçuşun diğerinin ÜZERİNE
+# yazılması demektir. Aşağıdaki kontroller bunu üretim ANINDA yakalar.
+# Ayrıntılı anlatım: belgeler/UCUS_NUMARALARI.md
+
+# Geçerli uçuş türleri (uçuş adının "_" sonrası kısmı).
+UCUS_TURLERI = ("normal", "spoof_cmd", "impersonation", "replay", "flood", "fake_telemetry")
+
+_REHBER = "Ayrıntı: belgeler/UCUS_NUMARALARI.md"
+
+
+def ucus_id_coz(ucus_id: str) -> tuple[int, str] | None:
+    """'F123_spoof_cmd' -> (123, 'spoof_cmd'). Biçim bozuksa None döndürür."""
+    if not ucus_id.startswith("F") or "_" not in ucus_id:
+        return None
+    sayi, tur = ucus_id[1:].split("_", 1)
+    if not sayi.isdigit() or not tur:
+        return None
+    return int(sayi), tur
+
+
+def pc_blogu(pc_id: str) -> tuple[int, int] | None:
+    """pc_id'ye ait yüzlük blok: 'pc1' -> (100, 199), 'pc2' -> (200, 299)."""
+    if pc_id and pc_id.startswith("pc") and pc_id[2:].isdigit():
+        n = int(pc_id[2:])
+        if n >= 1:
+            return n * 100, n * 100 + 99
+    return None
+
+
+def config_aralik_dogrula(cfg: dict) -> tuple[int, int]:
+    """config.yaml'daki ucus_no_araligi'nın pc_id ile uyumlu olduğunu denetler.
+
+    Örn. pc_id=pc2 ise aralık 200-299 bloğunun İÇİNDE olmalıdır (tamamı ya da
+    bir parçası; aynı kişinin iki cihazı bloğu bölüşebilir). Sorun varsa
+    Türkçe hata verip çıkar; yoksa (alt, ust) döndürür.
+    """
+    pc_id = str(cfg.get("pc_id", ""))
+    blok = pc_blogu(pc_id)
+    if blok is None:
+        hata_ve_cik(
+            f"config.yaml'daki pc_id geçersiz: '{pc_id}'. pc1, pc2 veya pc3 olmalı. {_REHBER}"
+        )
+    try:
+        alt, ust = (int(x) for x in cfg.get("ucus_no_araligi", []))
+    except (TypeError, ValueError):
+        hata_ve_cik(
+            "config.yaml'daki ucus_no_araligi '[alt, ust]' biçiminde olmalı "
+            f"(ör. [{blok[0]}, {blok[1]}]). {_REHBER}"
+        )
+    if not (blok[0] <= alt <= ust <= blok[1]):
+        hata_ve_cik(
+            f"config.yaml uyumsuz: pc_id={pc_id} ama ucus_no_araligi=[{alt}, {ust}]. "
+            f"{pc_id} için aralık {blok[0]}-{blok[1]} bloğunun içinde olmalı "
+            f"(ör. [{blok[0]}, {blok[1]}]). Muhtemelen pc_id'yi değiştirip aralığı "
+            f"değiştirmeyi unuttunuz. {_REHBER}"
+        )
+    return alt, ust
+
+
+def ucus_id_dogrula(
+    ucus_id: str,
+    cfg: dict | None = None,
+    yeni_kayit: bool = False,
+    beklenen_tur: str | None = None,
+) -> None:
+    """Uçuş adının bu cihaza uygun olduğunu denetler; değilse Türkçe hata verip ÇIKAR.
+
+    Kontroller:
+      1. Biçim: F<numara>_<tür> (ör. F101_normal, F205_spoof_cmd).
+      2. Tür: normal veya 5 saldırı türünden biri; beklenen_tur verilmişse ona eşit.
+      3. Numara: config.yaml'daki ucus_no_araligi içinde (başka cihazın
+         numarasını kullanmayı engeller).
+      4. yeni_kayit=True ise: bu numarada (türü ne olursa olsun) daha önce
+         kayıt yapılmamış olmalı (eski uçuşun üzerine yazmayı engeller).
+    """
+    if cfg is None:
+        cfg = config_oku()
+    alt, ust = config_aralik_dogrula(cfg)
+    kullanilan = [n for n in _mevcut_numaralar(cfg) if alt <= n <= ust]
+    bos_no = max(kullanilan) + 1 if kullanilan else alt
+    if bos_no > ust:
+        oneri = f"UYARI: aralığınız (F{alt}-F{ust}) dolmuş, config.yaml'ı güncelleyin"
+    else:
+        oneri = f"Bu cihaz için sıradaki boş ad: F{bos_no}_{beklenen_tur or 'normal'}"
+
+    cozum = ucus_id_coz(ucus_id)
+    if cozum is None:
+        hata_ve_cik(
+            f"Uçuş adı geçersiz: '{ucus_id}'. Biçim F<numara>_<tür> olmalı "
+            f"(ör. F{alt + 1}_normal). {oneri}. {_REHBER}"
+        )
+    no, tur = cozum
+
+    if tur not in UCUS_TURLERI:
+        hata_ve_cik(
+            f"Uçuş türü geçersiz: '{tur}'. Geçerli türler: {', '.join(UCUS_TURLERI)}. {_REHBER}"
+        )
+    if beklenen_tur and tur != beklenen_tur:
+        hata_ve_cik(
+            f"Uçuş adı ile yapılan iş uyuşmuyor: ad '{ucus_id}' ama tür '{beklenen_tur}'. "
+            f"Adın sonu '_{beklenen_tur}' olmalı (ör. F{no}_{beklenen_tur}). {_REHBER}"
+        )
+
+    if not (alt <= no <= ust):
+        hata_ve_cik(
+            f"F{no} bu cihazın numara aralığında DEĞİL. config.yaml: "
+            f"pc_id={cfg.get('pc_id')}, ucus_no_araligi=[{alt}, {ust}]. "
+            "Başka bir cihazın numarasını kullanırsanız veriler birleşirken "
+            f"uçuşlar birbirinin üzerine yazılır. {oneri}. {_REHBER}"
+        )
+
+    if yeni_kayit:
+        kok = repo_koku() / cfg.get("veri_klasoru", "veri/ucuslar")
+        if kok.exists():
+            for ad in sorted(os.listdir(kok)):
+                mevcut = ucus_id_coz(ad)
+                if mevcut is None or mevcut[0] != no:
+                    continue
+                klasor = kok / ad
+                dolu = any(p.is_file() for p in klasor.rglob("*"))
+                if ad == ucus_id and not dolu:
+                    continue  # yarıda kalmış, içi boş klasör: güvenle kullanılabilir
+                hata_ve_cik(
+                    f"F{no} numarası zaten kullanılmış: veri/ucuslar/{ad}/ var. "
+                    "Üzerine yazmamak için durduruldu. Yeni bir numara kullanın "
+                    f"({oneri}). O uçuş hatalıysa ve silmek istiyorsanız: "
+                    f"rm -rf veri/ucuslar/{ad}  {_REHBER}"
+                )
+
+
+# ---------------------------------------------------------------------
 # Port yardımcısı
 # ---------------------------------------------------------------------
 def port_bos_mu(host: str, port: int) -> bool:
@@ -231,9 +366,33 @@ def ground_truth_ekle(ucus_id: str, kayit: dict, cfg: dict | None = None) -> Pat
 
 
 if __name__ == "__main__":
-    # Hızlı kendini sınama: config'i oku ve özetle.
+    # Kullanım:
+    #   python betikler/ortak.py                      -> config özeti + sıradaki uçuş
+    #   python betikler/ortak.py --sonraki spoof_cmd  -> sıradaki boş adı yazar
+    #   python betikler/ortak.py --kontrol F101_normal [--yeni] [--tur normal]
+    #                                                 -> ad bu cihaza uygun mu?
+    import argparse
+
+    ap = argparse.ArgumentParser(description="Ortak yardımcılar / uçuş adı kontrolü.")
+    ap.add_argument("--sonraki", metavar="TUR", choices=UCUS_TURLERI,
+                    help="Bu tür için sıradaki boş uçuş adını yazdır.")
+    ap.add_argument("--kontrol", metavar="UCUS_ID", help="Uçuş adını denetle.")
+    ap.add_argument("--yeni", action="store_true",
+                    help="--kontrol ile: bu numara daha önce kullanılmamış olmalı.")
+    ap.add_argument("--tur", choices=UCUS_TURLERI,
+                    help="--kontrol ile: adın sonu bu tür olmalı.")
+    args = ap.parse_args()
+
     cfg = config_oku()
-    log(f"pc_id: {cfg.get('pc_id')}", "BILGI")
-    log(f"uçuş aralığı: {cfg.get('ucus_no_araligi')}", "BILGI")
-    log(f"sonraki uçuş: {sonraki_ucus_id('normal', cfg)}", "BILGI")
-    log("ortak.py kendini sınaması tamam.", "TAMAM")
+    if args.sonraki:
+        config_aralik_dogrula(cfg)
+        print(sonraki_ucus_id(args.sonraki, cfg))
+    elif args.kontrol:
+        ucus_id_dogrula(args.kontrol, cfg, yeni_kayit=args.yeni, beklenen_tur=args.tur)
+        log(f"Uçuş adı uygun: {args.kontrol}", "TAMAM")
+    else:
+        alt, ust = config_aralik_dogrula(cfg)
+        log(f"pc_id: {cfg.get('pc_id')}", "BILGI")
+        log(f"uçuş aralığı: F{alt}-F{ust}", "BILGI")
+        log(f"sonraki uçuş: {sonraki_ucus_id('normal', cfg)}", "BILGI")
+        log("ortak.py kendini sınaması tamam.", "TAMAM")

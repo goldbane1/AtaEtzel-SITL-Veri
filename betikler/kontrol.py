@@ -6,7 +6,7 @@ Bu betik, bir makinenin veri üretimine hazır olup olmadığını denetler ve
 her maddeyi Türkçe TAMAM/HATA olarak raporlar:
   - ArduPlane SITL derlenmiş mi (~/ardupilot/build/sitl/bin/arduplane)
   - pymavlink ve MAVProxy import edilebiliyor mu
-  - config.yaml okunabiliyor mu
+  - config.yaml okunabiliyor mu, pc_id ile uçuş aralığı uyumlu mu
   - Gerekli portlar boş mu (14550 UDP mantıksal, 5760 TCP)
 
 Kullanım:
@@ -81,9 +81,16 @@ def config_okunuyor_mu() -> bool:
     eksik = [a for a in gerekli if a not in cfg]
     if eksik:
         return _hata(f"config.yaml'da eksik alanlar: {eksik}")
+    try:
+        alt, ust = ortak.config_aralik_dogrula(cfg)
+    except SystemExit:
+        return _hata(
+            "pc_id ile ucus_no_araligi uyumsuz (yukarıdaki mesaja bakın; "
+            "belgeler/UCUS_NUMARALARI.md)."
+        )
     return _tamam(
-        f"config.yaml okundu (pc_id={cfg['pc_id']}, "
-        f"aralık={cfg['ucus_no_araligi']})."
+        f"config.yaml okundu (pc_id={cfg['pc_id']}, uçuş aralığı=F{alt}-F{ust}). "
+        "Bu cihaz YALNIZCA bu aralıktaki numaraları kullanmalı."
     )
 
 

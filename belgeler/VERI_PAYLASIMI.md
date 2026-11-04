@@ -29,8 +29,10 @@ Her makine ayrı bir uçuş numarası aralığı kullanır:
 | 2. PC | `pc2` | F200–F299 |
 | 3. PC | `pc3` | F300–F399 |
 
-Böylece `F101_normal` (pc1) ile `F201_normal` (pc2) çakışmaz. Her kişi
-`config.yaml`'da yalnızca kendi `pc_id` ve `ucus_no_araligi`'nı ayarlar.
+Böylece `F101_normal` (pc1) ile `F201_normal` (pc2) çakışmaz. Her cihaz
+`config.yaml`'da kendi `pc_id` ve `ucus_no_araligi`'nı ayarlar; bir kişinin iki
+cihazı varsa blok bölünür. Tüm kurallar, otomatik kontroller ve sık durumlar:
+[UCUS_NUMARALARI.md](UCUS_NUMARALARI.md).
 
 ## Birleştirme yöntemi (önerilen)
 
@@ -44,7 +46,18 @@ Böylece `F101_normal` (pc1) ile `F201_normal` (pc2) çakışmaz. Her kişi
        F312_flood/ ...
    ```
 2. Her kişi kendi `veri/ucuslar/F?xx_*` klasörlerini bu ortak klasöre yükler.
-   Numara aralıkları çakışmadığı için üzerine yazma olmaz.
+   Numara aralıkları çakışmadığı için üzerine yazma olmamalı; yine de
+   **üzerine yazmayan** bir yöntem kullanın:
+   ```bash
+   rsync -av --ignore-existing veri/ucuslar/ /ortak/klasor/ucuslar/
+   ```
+   Sürükle-bırakta "dosya zaten var" sorusu çıkarsa **HAYIR** deyin ve ekibe
+   haber verin — bu bir çakışmadır.
+   Yükledikten sonra aynı numaranın iki kez geçmediğini kontrol edin (çıktı
+   boş olmalı):
+   ```bash
+   ls /ortak/klasor/ucuslar | cut -d_ -f1 | sort | uniq -d
+   ```
 3. Birleştirme makinesinde tüm uçuşları tek bir `veri/ucuslar/` altında toplayıp
    işleme adımlarını (etiketle → öznitelik → böl → doğrula) **birlikte** çalıştırın:
    ```bash

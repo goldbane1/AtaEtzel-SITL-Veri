@@ -135,6 +135,8 @@ def main() -> int:
     host = cfg.get("host", "127.0.0.1")
     udp_port = int(cfg.get("udp_port", 14550))
     ucus_id = args.ucus or ortak.sonraki_ucus_id("normal", cfg)
+    # Klasörü proxy açtığı için burada yalnızca biçim/aralık denetlenir.
+    ortak.ucus_id_dogrula(ucus_id, cfg)
 
     gorev_yolu = Path(args.gorev)
     if not gorev_yolu.exists():

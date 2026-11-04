@@ -127,10 +127,19 @@ betikler/saldirilar/*.py` ve `bash -n betikler/*.sh`.
 | pc3 | F300–F399 | `F312_flood` | Ekip arkadaşı — Ubuntu 24.04 |
 
 Uçuş adı biçimi: `F<numara>_<tür>` (tür: `normal` veya saldırı adı).
-Bir oturumun başında `config.yaml`'daki `pc_id`'nin o makineye uygun olduğunu
-kontrol et; değilse kullanıcıya hangi PC olduğunu sor. Aynı kişi birden fazla
-cihazda (ör. masaüstü + laptop) üretim yapıyorsa aralığı **bölüşmeleri**
-gerekir (ör. pc1 masaüstü F100–F149, laptop F150–F199) — kullanıcıya hatırlat.
+**Numara ekip genelinde tektir** (tür farklı olsa bile). Kurallar ve tam cihaz
+tablosu: `belgeler/UCUS_NUMARALARI.md` (tek doğru kaynak; tablo değişirse orayı
+ve README'yi güncelle).
+
+- Bir oturumun başında `config.yaml`'daki `pc_id` ve `ucus_no_araligi`'nın
+  kullanıcının o anki cihazıyla uyuştuğunu kullanıcıya sorarak doğrula.
+  Batuhan'ın iki cihazı bloğu böler: masaüstü `[100, 149]`, laptop `[150, 199]`.
+- Uçuş komutu önerirken numarayı uydurma: `python betikler/ortak.py --sonraki <tür>`
+  ile sıradaki boş adı al.
+- Çakışma koruması `ortak.py` içindedir (`config_aralik_dogrula`,
+  `ucus_id_dogrula`); `kayit_proxy.py`, `ucus_yap.py`, `normal_uretim.sh`,
+  `saldiri_uret.sh` bunu çağırır. Bu kontrolleri gevşetme/atlatma; "zaten
+  kullanılmış" hatasında kullanıcıya sormadan klasör silme.
 
 ## 8. Güncel durum
 

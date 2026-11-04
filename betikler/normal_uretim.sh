@@ -34,6 +34,10 @@ if [[ -f ".venv/bin/activate" ]]; then
   source .venv/bin/activate
 fi
 
+# Çakışma koruması: uçuş adı bu cihazın aralığında mı, daha önce kullanıldı mı?
+# (Ayrıntı: belgeler/UCUS_NUMARALARI.md) Sorun varsa hiçbir şey başlatılmadan durur.
+python betikler/ortak.py --kontrol "$UCUS" --yeni --tur normal || exit 1
+
 echo "[BILGI] 1/3 Kayıt proxy'si başlatılıyor (arka planda)..."
 python betikler/kayit_proxy.py --ucus "$UCUS" &
 PROXY_PID=$!

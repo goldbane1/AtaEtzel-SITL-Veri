@@ -107,4 +107,7 @@ En sonda:
 | 2. PC | `pc2` | F200–F299 | `F205_spoof_cmd` |
 | 3. PC | `pc3` | F300–F399 | `F312_flood` |
 
-`pc_id` ve aralık `config.yaml`'da tutulur; her kişi yalnızca `pc_id`'yi ayarlar.
+`pc_id` ve aralık `config.yaml`'da tutulur; her cihaz **ikisini birlikte**
+ayarlar. Aynı kişinin birden fazla cihazı varsa blok bölünür (ör. pc1 masaüstü
+`[100, 149]`, laptop `[150, 199]`). Kurallar ve otomatik kontroller:
+[UCUS_NUMARALARI.md](UCUS_NUMARALARI.md).
