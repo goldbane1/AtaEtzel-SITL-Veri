@@ -58,6 +58,32 @@ python betikler/kontrol.py        # hepsi TAMAM olmalı
 
 Ayrıntılar: [belgeler/KURULUM.md](belgeler/KURULUM.md).
 
+### Desteklenen işletim sistemleri
+
+Ubuntu **22.04 / 24.04 / 26.04** ve bunlara dayanan **Pop!_OS** desteklenir
+(WSL2 dahil). Ubuntu 20.04 ve öncesi desteklenmez; `setup.sh` bu durumda
+Türkçe uyarı verip durur. ArduPlane sürümü (Plane-4.7.2) tüm makinelerde aynı
+olduğu sürece makinelerin farklı Ubuntu sürümünde olması üretilen veriyi
+etkilemez.
+
+> ⚠️ **Ubuntu 26.04 hakkında (henüz denenmedi):** `setup.sh` 26.04'te de
+> çalışacak şekilde ayarlandı, ancak bu sürümde **gerçek bir kurulum ve
+> derleme henüz yapılmadı**. Bilinen riskler:
+>
+> - 26.04 daha yeni bir derleyici (GCC) ile gelir. Plane-4.7.2 bu derleyiciden
+>   önce yayımlandığı için `./waf plane` adımında daha önce görülmemiş
+>   uyarılar ya da hatalar çıkabilir.
+> - ArduPilot'un `install-prereqs-ubuntu.sh` betiği 26.04'ün kod adını
+>   tanımazsa `setup.sh` durmaz, temel paketleri yedek adımla kurar. Ancak bu
+>   durumda derlemenin ihtiyaç duyduğu bazı Python paketleri eksik kalabilir.
+>
+> 26.04 kullanıyorsanız `bash setup.sh` çıktısının tamamını (özellikle
+> `[UYARI]`/`[HATA]` satırlarını) kaydedin ve hata çıkarsa ekiple paylaşın.
+> Çözüm bulununca bu not ve [SORUN_GIDERME.md](belgeler/SORUN_GIDERME.md)
+> güncellenecek. İşletim sistemini sonradan yükseltirseniz (ör. 24.04 → 26.04)
+> şu komutu yeniden çalıştırın:
+> `cd ~/ardupilot && Tools/environment_install/install-prereqs-ubuntu.sh -y`
+
 ---
 
 ## Bir uçuş üretmek

@@ -122,9 +122,14 @@ betikler/saldirilar/*.py` ve `bash -n betikler/*.sh`.
 
 | pc_id | Uçuş aralığı | Örnek | Not |
 |-------|--------------|-------|-----|
-| pc1 | F100–F199 | `F101_normal` | Batuhan — Pop!_OS 22.04 (jammy tabanlı) |
-| pc2 | F200–F299 | `F205_spoof_cmd` | Ekip arkadaşı — Ubuntu 22.04 |
-| pc3 | F300–F399 | `F312_flood` | Ekip arkadaşı — Ubuntu 24.04 |
+| pc1 | F100–F199 | `F101_normal` | Batuhan — masaüstü Pop!_OS 24.04 (noble tabanlı) + laptop |
+| pc2 | F200–F299 | `F205_spoof_cmd` | Ekip arkadaşı — Ubuntu (sürüm kesinleşmedi) |
+| pc3 | F300–F399 | `F312_flood` | Ekip arkadaşı — Ubuntu (sürüm kesinleşmedi) |
+
+Ekipte Ubuntu **26.04** kullanan da var. `setup.sh` 22.04 ve sonrasındaki her
+Ubuntu'da devam eder, ama 26.04'te Plane-4.7.2 derlemesi henüz denenmedi
+(README'deki "Ubuntu 26.04 hakkında" notu). 26.04'te kurulum/derleme hatası
+çıkarsa çözümü `belgeler/SORUN_GIDERME.md`'ye ve README notuna işle.
 
 Uçuş adı biçimi: `F<numara>_<tür>` (tür: `normal` veya saldırı adı).
 **Numara ekip genelinde tektir** (tür farklı olsa bile). Kurallar ve tam cihaz
