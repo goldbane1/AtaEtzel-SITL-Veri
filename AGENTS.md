@@ -24,6 +24,12 @@ güvenlik duvarı modeli için etiketli veri seti. Model ve panel bu reponun
 
 5 saldırı türü: `spoof_cmd`, `impersonation`, `replay`, `flood`, `fake_telemetry`.
 
+**Bütün mimari:** Üretilen veri, telsiz ile otopilot arasına yerleşen Raspberry Pi
+tabanlı üç katmanlı bir güvenlik duvarını (kural, RS-TCN, fiziksel tutarlılık;
+füzyon ve kademeli müdahale) eğitmek ve değerlendirmek için kullanılır.
+`kayit_proxy.py` bu duvarın iskeletidir. Yapılan her değişiklik bu mimariye göre
+değerlendirilir: [`belgeler/MIMARI.md`](belgeler/MIMARI.md).
+
 ## 2. İletişim kuralları
 
 - **Her şey Türkçe**: kullanıcıyla konuşma, kod yorumları, log/hata mesajları,
@@ -91,7 +97,8 @@ Saldırı betikleri (localhost)─┘          (her paketi kaydeder)
 
 **Belgeler:** `KURULUM.md` → `VERI_URETIMI.md` → `VERI_PAYLASIMI.md` (sıralı);
 `VERI_SEMASI.md`, `SORUN_GIDERME.md` ve `UCUS_NUMARALARI.md` başvuru belgeleri;
-`YOL_HARITASI.md` görev takibinin tek doğru kaynağı. Bir konuda çalışmadan önce
+`MIMARI.md` sistemin bütünü; `YOL_HARITASI.md` görev takibinin tek doğru kaynağı.
+Bir konuda çalışmadan önce
 ilgili belgeyi oku; kodu değiştirirsen belgeyi de güncelle.
 
 ## 6. Sık kullanılan komutlar
@@ -156,6 +163,9 @@ ve README'yi güncelle).
 
 Projenin güncel durumu ve yapılacak işler için **tek doğru kaynak
 `belgeler/YOL_HARITASI.md`'dir**. Durumu buraya yazma, orayı güncelle.
+
+**Bir göreve başlamadan önce `belgeler/MIMARI.md` ve `belgeler/YOL_HARITASI.md`'yi
+oku.**
 
 **"Sıradaki görev" kuralı:** Kullanıcı "sıradaki görev" dediğinde
 `YOL_HARITASI.md`'deki ilk işaretlenmemiş görevi yap. Bitince: tüm testleri
