@@ -9,3 +9,5 @@ pandas         # parquet okuma/yazma ve öznitelik hesabı
 numpy          # sayısal işlemler
 pyarrow        # pandas için parquet motoru
 pyyaml         # config.yaml okuma
+empy==3.3.4    # ArduPlane SITL derlemesi (DroneCAN dsdlc) için zorunlu
+pexpect        # sim_vehicle.py (pysim/util.py) için zorunlu
