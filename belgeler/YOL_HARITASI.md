@@ -233,6 +233,10 @@ tutarsızlığını öğrensin.
   komutlarına göre güncelle.
 - F104 için yazan "mod değişimli" notunu düzelt (şu an görev dosyası yalnızca görev
   içi loiter ve iniş içeriyor).
+- **Görevleri uzat:** 5 görev dosyası, kalkıştan sonra AUTO modunda en az 300 sn
+  sürecek şekilde genişletilsin (daha uzak noktalar veya `DO_JUMP` ile tekrar).
+  G0'da `gorev1` ~79. sn'de bitip uçuşun kalanı RTL'de geçti; bu hem normal uçuş
+  çeşitliliğini düşürür hem saldırıların RTL sırasında düşmesine neden olur.
 
 **Dikkat:**
 
@@ -252,10 +256,12 @@ tutarsızlığını öğrensin.
 - `--irtifa-farki-m` görev noktalarına doğru uygulanıyor, ev konumuna ve iniş
   noktasına uygulanmıyor (SITL'siz test); `--telemetri-hz` meta'da görünüyor.
 - `VERI_URETIMI.md` güncel, F104 notu düzeltilmiş.
+- 5 görevin her biri gerçek SITL'de ölçüldü: kalkıştan sonra en az 300 sn AUTO'da
+  kalıyor; ölçülen süreler **Sonuç** satırında.
 
 **Etkilenen dosyalar:** `betikler/ucus_yap.py`, `betikler/normal_uretim.sh`,
-`betikler/saldiri_uret.sh`, `belgeler/VERI_URETIMI.md`, `belgeler/VERI_SEMASI.md`
-(`meta.json` alanları), `tests/`
+`betikler/saldiri_uret.sh`, `gorevler/*.waypoints`, `belgeler/VERI_URETIMI.md`,
+`belgeler/VERI_SEMASI.md` (`meta.json` alanları), `tests/`
 
 **Sonuç:** —
 
@@ -438,6 +444,10 @@ boyu çalışabilmeli; başarısız bir uçuş tüm geceyi yakmamalı.
 - Saldırı çeşitliliği: tohuma bağlı olarak alt türler de seçilsin: `spoof_cmd
   --komut`, `flood --hiz`, `impersonation --hiz`, `fake_telemetry --sapma-m` ve
   `--hiz`.
+- **`spoof_cmd` etkili olsun:** `spoof_cmd.py`'nin varsayılan komutu uçuşu gerçekten
+  etkileyen bir komut olsun (ör. `mod_rtl`). G0'da varsayılan `disarm` uçuşta
+  reddedildi (ACK sonucu 4), uçak görevine devam etti. Toplu üretimde etkili komutlar
+  ağırlıklı seçilsin; reddedilen `disarm` denemeleri azınlıkta kalsın.
 - Replay kaynağı: aynı makinedeki, başarılı bir normal uçuştan tohumla seçilsin;
   uygun kaynak yoksa önce normal uçuşlar üretilsin.
 - Saldırı zamanlaması: saldırı, kalkış doğrulandıktan **en az 16 sn sonra** başlasın
@@ -465,6 +475,8 @@ boyu çalışabilmeli; başarısız bir uçuş tüm geceyi yakmamalı.
 - Saldırı türleri dengeli; saldırı öncesi ve sonrası 16 sn temiz bölüm kuralı
   sağlanıyor (SITL'siz test ve `dogrula.py` kontrolü).
 - Boş numara yetmediğinde betik başlamıyor.
+- `spoof_cmd` varsayılan komutuyla gerçek SITL'de uçağın modu saldırı aralığında
+  değişiyor.
 
 **Etkilenen dosyalar:** `betikler/toplu_uretim.sh` veya `.py` (yeni),
 `betikler/etiketle.py`, `betikler/oznitelik.py`, `betikler/bol.py`,
