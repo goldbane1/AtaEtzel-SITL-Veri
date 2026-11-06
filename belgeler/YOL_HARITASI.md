@@ -194,6 +194,17 @@ bugün veride tamamen kayboluyor. Zaman ekseni de kesintisiz olmalı.
 - `seq_atlama` / `seq_tekrar` yön + `sysid` + `compid` akışı başına hesaplansın
   (seq her kaynak için ayrı işler) ve pencere sınırında önceki pencerenin son
   seq'iyle devam etsin; yalnızca geçmiş kullanıldığı için nedensellik bozulmaz.
+- **Komutu kim, nasıl gönderdi öznitelikleri** ekle. G1'de kabul edilen geçerli sahte
+  komutun tutarsızlık üretmediği görüldü. `F103`'te sahte akış kendi içinde kusursuzdu
+  (compid 190), yalnızca sysid'e göre bakılınca 19 seq bozulması vardı:
+
+  | Sütun | Açıklama |
+  |-------|----------|
+  | `gcs_akis_sayisi` | Penceredeki farklı gcs2uav `sysid` + `compid` akışı sayısı |
+  | `gcs_sysid_seq_bozulma` | gcs2uav'de aynı `sysid` içinde, `compid` ayrımı yapmadan seq süreksizliği |
+  | `ayni_komut_tekrari` | Pencerede aynı `command` değerinin tekrar sayısı (ilk geçiş hariç) |
+  | `kritik_komut_sayisi` | Mod değişimi, disarm gibi kritik komut sayısı |
+  | `komut_araligi_min_s` | gcs2uav komutları arasındaki en kısa süre; önceki pencereye taşınır, komut yoksa üst sınır değeri |
 
 **Dikkat (veri sızıntısı):** `saldiri_araliginda` ve `saldiri_turu_aralik`
 ground truth'tan gelir. Bunlar **etiket sütunudur, öznitelik değildir**; modele
@@ -210,6 +221,8 @@ girdi olarak verilmez. `VERI_SEMASI.md`'ye bu şekilde yazılır.
   ayrı sütunlarda görülüyor.
 - İki farklı `compid` akışının karışması sahte `seq_atlama` üretmiyor; pencere
   sınırındaki seq atlaması sayılıyor.
+- `gcs_sysid_seq_bozulma` iki akışın karışmasını yakalıyor; beş yeni sütun için
+  nedensellik testi geçiyor, tekrar ve aralık değerleri örnek veride doğru.
 - `VERI_SEMASI.md` yeni sütunları ve bunların etiket olduğunu yazıyor.
 
 **Etkilenen dosyalar:** `betikler/oznitelik.py`, `betikler/dogrula.py`,
@@ -459,6 +472,10 @@ boyu çalışabilmeli; başarısız bir uçuş tüm geceyi yakmamalı.
   etkileyen bir komut olsun (ör. `mod_rtl`). G0'da varsayılan `disarm` uçuşta
   reddedildi (ACK sonucu 4), uçak görevine devam etti. Toplu üretimde etkili komutlar
   ağırlıklı seçilsin; reddedilen `disarm` denemeleri azınlıkta kalsın.
+- **`spoof_cmd` varyantları:** `--taklit-compid` (gerçek GCS ile aynı `sysid` +
+  `compid`) ve `--tek-atis` (tek komut) eklensin; mevcut tekrarlı mod kalsın. Yanlış
+  `compid` s1 beyaz listesine anında takılır ve saldırıyı fazla kolay gösterir. Seçilen
+  varyant `ground_truth.json`'daki `params` alanına yazılsın.
 - Replay kaynağı: aynı makinedeki, başarılı bir normal uçuştan tohumla seçilsin;
   uygun kaynak yoksa önce normal uçuşlar üretilsin.
 - Saldırı zamanlaması: saldırı, kalkış doğrulandıktan **en az 16 sn sonra** başlasın
@@ -488,6 +505,8 @@ boyu çalışabilmeli; başarısız bir uçuş tüm geceyi yakmamalı.
 - Boş numara yetmediğinde betik başlamıyor.
 - `spoof_cmd` varsayılan komutuyla gerçek SITL'de uçağın modu saldırı aralığında
   değişiyor.
+- `--taklit-compid` paketlerinin `compid` değeri gerçek GCS ile aynı; `--tek-atis` tek
+  komut gönderiyor (SITL'siz test).
 
 **Etkilenen dosyalar:** `betikler/toplu_uretim.sh` veya `.py` (yeni),
 `betikler/etiketle.py`, `betikler/oznitelik.py`, `betikler/bol.py`,
@@ -553,6 +572,9 @@ sayılarla göstermek. Toplu üretime güvenmeden önceki son kapı budur.
   `fake_telemetry`, bir `orta` profilli normal.
 - `etiketle` → `oznitelik` → `bol` → `dogrula`.
 - **Açık karar K1** sonuçlanmış olmalı; rapor `fake_telemetry` varsayımını yazar.
+- `spoof_cmd` için öznitelik ortalamaları varyant başına ayrı verilsin. Doğru kimlikli
+  tek komut varyantı paket içeriğinden ayırt edilemeyebilir: MAVLink kimlik doğrulaması
+  yapmaz. Bu sınır raporda açıkça yazılsın; asıl destek s1 ve s3 katmanlarından gelir.
 - Rapor: paket sayısı ve yön dağılımı, etiket dağılımı, pencere sayısının süreyle
   uyumu, komut–yanıt özniteliklerinin normal ve saldırılı uçuştaki ortalamaları,
   `fake_telemetry` yönü, ölçülen kanal gecikmesi ve kaybı.
