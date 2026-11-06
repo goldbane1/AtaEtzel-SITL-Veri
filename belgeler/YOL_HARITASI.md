@@ -53,7 +53,7 @@ verilmemişse asistan görevi yapmadan önce kullanıcıya sorar.
 
 | # | Karar | Etkilediği görev | Durum |
 |---|-------|------------------|-------|
-| K1 | **Duvar sahte telemetriyi görebiliyor mu?** Duvar uçak tarafında durur. Saldırgan telsizden yer istasyonuna yayın yaparsa paket duvardan geçmez. G4 bu paketleri proxy'de `uav2gcs` kaydettiği için duvarın telsiz kanalını dinlediğini varsayar. Bu varsayım geçerliyse `MIMARI.md`'ye yazılmalı; geçerli değilse `fake_telemetry` için tespit ve değerlendirme planı değişmeli | G4, G7, G8 | Bekliyor (Batuhan + Hasan) |
+| K1 | **Duvar sahte telemetriyi görebiliyor mu?** Evet: Telsiz kanalı paylaşılan ortamdır, uçak telsizi menzildeyse paketi alıp duvara iletir (`MIMARI.md`, telsiz kanalı varsayımı). Paket duvarın gözünden `gcs2uav` kaydedilir | G4, G7, G8 | **Karar verildi** (2026-11-06) |
 | K2 | **Ekip ve makine sayısı.** `MIMARI.md` iki kişi diyor; repo "üç kişi, üç makine" diyor. Üçüncü makine kimde, `pc3` kullanılacak mı? | G8, `UCUS_NUMARALARI.md` | Bekliyor |
 | K3 | **Numara bloğu.** G8'in öneri hacmi (300 uçuş) üç yüzlük bloğu başarısız uçuşlara pay bırakmadan tam doldurur. `pc_blogu()` yüzlük bloğa sabit olduğu için ek blok kod değişikliği ister | G6.5, G8 | Bekliyor |
 
@@ -300,20 +300,26 @@ tutarsızlığını öğrensin.
 
 - [ ] **Durum**
 
-**Amaç:** `fake_telemetry.py` şu an 14550'ye yazıyor; yani sahte telemetri uçağa
-gidiyor ve `gcs2uav` kaydediliyor. Gerçekte bu saldırı yer istasyonunu kandırır,
-yönü `uav2gcs` olmalıdır. Yanlış yönlü veri modele yanlış imza öğretir.
+**Amaç:** `fake_telemetry.py` şu an 14550'ye yazıyor; yani sahte telemetri uçağa da
+gidiyor. Gerçekte bu saldırı yer istasyonunu kandırır, uçağı etkilememelidir. Paket
+yine de duvarın gözünden telsizden gelir, bu yüzden `gcs2uav` kaydedilir.
+
+**K1 kararı:** Telsiz kanalı paylaşılan ortamdır; uçak telsizi menzildeyse sahte
+telemetriyi alıp duvara iletir, ek alıcı gerekmez. Duvar bu paketi uçaktan çıkarken
+değil, telsizden gelirken görür. Yer istasyonunun almasını engelleyemez; müdahale
+yalnızca uyarı ve panel bildirimidir (`MIMARI.md`).
 
 **Yapılacaklar:**
 
 - `kayit_proxy.py`'ye ikinci giriş: `hava_enjeksiyon_port` (`config.yaml`, 14551,
   yalnızca 127.0.0.1).
-- Bu porta gelenler SITL'ye **iletilmez**, GCS adreslerine gider ve
-  `direction=uav2gcs` olarak kaydedilir.
+- Bu porta gelenler GCS adreslerine gider, SITL'ye **iletilmez** ve duvarın gözünden
+  `direction=gcs2uav`, `src_ip`/`src_port` enjekte eden adres olarak kaydedilir.
 - `fake_telemetry.py` bu porta yazsın; localhost kontrolü aynen kalsın.
-- `dogrula.py`, `fake_telemetry` saldırı paketlerinin `uav2gcs` olduğunu kontrol
-  etsin.
-- Her saldırının enjeksiyon yönünü README ve `VERI_SEMASI.md`'ye tablo olarak yaz.
+- `dogrula.py`, `fake_telemetry` uçuşlarında saldırı paketlerinin `gcs2uav` yönünde ve
+  sysid'inin uçağın kendi sysid'i olduğunu kontrol etsin.
+- Her saldırının enjeksiyon yönünü README ve `VERI_SEMASI.md`'ye tablo olarak yaz;
+  "duvarın gözünden yön" kavramını bir cümleyle açıkla.
 - `fake_telemetry.py` sabit CMAC konumuna değil, **uçağın o anki gerçek konumuna**
   dayalı sahte değer üretsin (gerçek telemetriyi 14550 üzerinden okuyarak). `--sapma-m`
   küçük ve büyük değerlerle kullanılabilsin; sabit konum fazla kolay yakalanır.
@@ -337,8 +343,9 @@ yönü `uav2gcs` olmalıdır. Yanlış yönlü veri modele yanlış imza öğret
 **Kabul ölçütü:**
 
 - SITL'siz testte 14551'e gelen paket SITL tarafına gitmiyor, GCS'ye ulaşıyor,
-  `uav2gcs` kaydediliyor ve etiketlemede `fake_telemetry` oluyor.
-- `dogrula.py` yanlış yönlü `fake_telemetry` paketini EKSİK olarak bildiriyor.
+  `gcs2uav` ve enjekte eden adresle kaydediliyor, etiketlemede `fake_telemetry` oluyor.
+- `dogrula.py` yanlış yönlü ya da yanlış sysid'li `fake_telemetry` paketini EKSİK olarak
+  bildiriyor.
 - Localhost dışı hedef hâlâ reddediliyor.
 - Yön tablosu README ve `VERI_SEMASI.md`'de.
 - Sahte konum, verilen gerçek konuma `--sapma-m` kadar uzaklıkta (SITL'siz test).
@@ -420,8 +427,8 @@ değil) ve tohumlu olursa üretim üç makinede de tekrar edilebilir.
 
 **Dikkat:**
 
-- Enjeksiyon paketleri (G4) `uav2gcs` olduğu için bozulma onlara da kayıttan sonra
-  uygulanır.
+- Enjeksiyon paketleri (G4) `gcs2uav` kaydedilir, telsizden geldikleri için bozulma
+  onlara da kayıttan önce uygulanır; kaybolan paket kaydedilmez ve GCS'ye gitmez.
 - G7 "ölçülen gecikme ve kayıp" istiyor; bunun için `kanal` alanına sayaçlar da
   yazılmalı (ör. gönderilen, düşürülen, ölçülen ortalama gecikme).
 
@@ -576,7 +583,8 @@ sayılarla göstermek. Toplu üretime güvenmeden önceki son kapı budur.
 - SITL ile şu uçuşları üret: bir operatör komutlu normal, bir `spoof_cmd`, bir
   `fake_telemetry`, bir `orta` profilli normal.
 - `etiketle` → `oznitelik` → `bol` → `dogrula`.
-- **Açık karar K1** sonuçlanmış olmalı; rapor `fake_telemetry` varsayımını yazar.
+- Rapor `fake_telemetry` varsayımını yazar (K1); bu saldırıda "gereksiz güvenli mod"
+  metriği uygulanmaz.
 - `spoof_cmd` için öznitelik ortalamaları varyant başına ayrı verilsin. Doğru kimlikli
   tek komut varyantı paket içeriğinden ayırt edilemeyebilir: MAVLink kimlik doğrulaması
   yapmaz. Bu sınır raporda açıkça yazılsın; asıl destek s1 ve s3 katmanlarından gelir.
@@ -589,7 +597,7 @@ sayılarla göstermek. Toplu üretime güvenmeden önceki son kapı budur.
 - Tüm testler geçti.
 - 4 uçuşun hepsine `dogrula.py` TAMAM dedi.
 - Rapor yukarıdaki maddelerin hepsini içeriyor.
-- `fake_telemetry` saldırı paketlerinin tamamı `uav2gcs`.
+- `fake_telemetry` saldırı paketlerinin tamamı `gcs2uav` ve uçağın sysid'iyle kayıtlı.
 - Pencere sayısı uçuş süresiyle uyumlu.
 - `orta` profilinde ölçülen gecikme ve kayıp 80 ± 20 ms, %3 değerleriyle uyumlu.
 

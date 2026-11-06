@@ -89,8 +89,28 @@ histerezisli eşiklerle kademelidir:
 
 Amaç: Yanlış alarmlar görevi gereksiz yere sonlandırmasın.
 
+**`fake_telemetry` istisnası:** Duvar, yer istasyonunun bu paketi almasını engelleyemez;
+paket telsiz kanalından doğrudan yer istasyonuna ulaşır. Bu saldırıda müdahale yalnızca
+uyarı ve panel bildirimidir, engelleme ve güvenli mod uygulanmaz.
+
 **Web güvenlik paneli** skorları, alarmları, engellenen paketleri ve müdahaleleri
 canlı gösterir.
+
+### Telsiz kanalı varsayımı
+
+Telsiz kanalı paylaşılan bir ortamdır. Saldırganın yer istasyonuna yolladığı sahte
+telemetriyi, aynı kanal ve ağ ayarlarındaki uçak telsizi de menzildeyse alır ve seri
+porttan duvara iletir. Ek bir alıcı gerekmez.
+
+**Sınırlılık:** Yönlü anten kullanan ya da uçağın menzili dışındaki bir saldırgan bu
+varsayımı bozar. Buna karşı yer istasyonu tarafında bir kontrol ileriki çalışmadır.
+
+**Duvarın gözünden yön:** Paketin yönü hedefine göre değil, duvarın onu nereden
+gördüğüne göre kaydedilir. Telsizden gelen her paket `gcs2uav`'dir; sahte telemetri de
+yer istasyonunu hedeflese bile bu yönde görülür.
+
+**Kural katmanı için aday kural (henüz kodlanmadı):** Telsizden gelen ve uçağın kendi
+sysid'ini taşıyan paket şüphelidir.
 
 ## 3. Karşılaştırma yöntemleri
 
@@ -116,7 +136,7 @@ bölme **yasak** (sızıntı).
 |--------|-------|
 | Saldırı türü bazında duyarlılık, makro-F1 | ≥ 0,95 |
 | Normal uçuşlarda yanlış alarm oranı | < %2 |
-| Gereksiz güvenli mod geçişi | 0 |
+| Gereksiz güvenli mod geçişi (`fake_telemetry` için uygulanmaz) | 0 |
 | Raspberry Pi'de paket başına gecikme (ortalama ve p99) | < 20 ms |
 | Tespit gecikmesi | Ölçülür |
 
@@ -132,7 +152,7 @@ bölme **yasak** (sızıntı).
 | **Kesintisiz pencereler** | TCN düzenli zaman serisi bekler; boş saniye de bilgidir |
 | **Nedensel öznitelikler** | Model gerçek zamanlı çalışacak; bir pencere gelecekteki paketi kullanamaz |
 | **Otomatik ve kesin etiket** | Saldırgan adresi + zaman aralığı. `src_ip`, `src_port`, `raw_hex` modele asla girmez |
-| **Gerçekçi saldırı yönü** | Komut saldırıları uçağa (`gcs2uav`), sahte telemetri yer istasyonuna (`uav2gcs`) |
+| **Gerçekçi saldırı yönü** | Komut saldırıları uçağı, sahte telemetri yer istasyonunu hedefler. İkisi de telsizden geldiği için duvarın gözünden `gcs2uav` kaydedilir; sahte telemetri uçağa iletilmez |
 | **Konuma göre kanal bozulması** | `gcs2uav` paketleri telsizden geçtikten sonra proxy'ye ulaşır, `uav2gcs` paketleri proxy'den çıktıktan sonra telsize girer. T2/T3 buna dayanır |
 | **Tekrar üretilebilirlik** | Tohum, görev, rüzgâr, kanal profili ve operatör komutları `meta.json`'da |
 
