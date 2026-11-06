@@ -58,6 +58,8 @@ OPERATOR_SON_BOSLUK_S = 20.0       # uçuşun son 20 sn'sine komut konmaz
 LOITER_SURE_S = (5.0, 12.0)        # AUTO -> LOITER -> AUTO döngüsünde LOITER süresi
 DURUM_ARALIK_S = (12.0, 18.0)      # zararsız durum sorguları arası süre
 ACK_ZAMAN_ASIMI_S = 3.0
+YENIDEN_DENEME = 4                 # bozuk kanalda kaybolan yanıt için deneme sayısı
+GOREV_YUKLEME_SURESI_S = 60.0
 OPERATOR_ISLEMLERI = ("mod_dongusu", "hiz_degistir", "param_oku",
                       "gorev_sirasi", "mesaj_hizi")
 OKUNACAK_PARAMLAR = ("WP_RADIUS", "WP_LOITER_RAD", "RTL_RADIUS", "RTL_ALTITUDE")
@@ -362,22 +364,38 @@ def gorev_yukle(baglanti, gorev_yolu: Path, irtifa_farki_m: float = 0.0) -> int:
         nokta = wp.wp(i)
         nokta.z = irtifa_uygula(i, nokta.command, nokta.frame, nokta.z, irtifa_farki_m)
 
-    baglanti.waypoint_clear_all_send()
+    # Eski görevi sil. Yanıt kaybolabilir; yeniden denenir, sonuçsuz kalırsa da devam edilir.
+    for _ in range(YENIDEN_DENEME):
+        baglanti.waypoint_clear_all_send()
+        if baglanti.recv_match(type=["MISSION_ACK"], blocking=True, timeout=3) is not None:
+            break
+
+    # Karşı taraf hangi noktayı isterse onu gönder; kayıpta isteğini tekrarlar.
+    bitis = time.time() + GOREV_YUKLEME_SURESI_S
     baglanti.waypoint_count_send(wp.count())
-    for _ in range(wp.count()):
+    gonderilenler: set[int] = set()
+    while time.time() < bitis:
         msg = baglanti.recv_match(
-            type=["MISSION_REQUEST", "MISSION_REQUEST_INT"], blocking=True, timeout=10
+            type=["MISSION_REQUEST", "MISSION_REQUEST_INT", "MISSION_ACK"],
+            blocking=True, timeout=3,
         )
         if msg is None:
-            ortak.log("Görev yükleme sırasında MISSION_REQUEST gelmedi.", "HATA")
-            return 0
+            if len(gonderilenler) == wp.count():
+                ortak.log("Son MISSION_ACK alınamadı; tüm noktalar gönderildi.", "UYARI")
+                return wp.count()
+            if not gonderilenler:
+                baglanti.waypoint_count_send(wp.count())
+            continue
+        if msg.get_type() == "MISSION_ACK":
+            if msg.type != mavutil.mavlink.MAV_MISSION_ACCEPTED:
+                ortak.log(f"Görev kabul edilmedi (MISSION_ACK: {msg}).", "HATA")
+                return 0
+            ortak.log("Görev yüklendi (MISSION_ACK alındı).", "TAMAM")
+            return wp.count()
+        gonderilenler.add(msg.seq)
         baglanti.mav.send(wp.wp(msg.seq))
-    ack = baglanti.recv_match(type=["MISSION_ACK"], blocking=True, timeout=10)
-    if ack is None or ack.type != mavutil.mavlink.MAV_MISSION_ACCEPTED:
-        ortak.log(f"Görev kabul edilmedi (MISSION_ACK: {ack}).", "HATA")
-        return 0
-    ortak.log("Görev yüklendi (MISSION_ACK alındı).", "TAMAM")
-    return wp.count()
+    ortak.log("Görev yükleme süresi doldu.", "HATA")
+    return 0
 
 
 def telemetri_iste(baglanti, hz: int = TELEMETRI_HIZI_HZ) -> None:
@@ -388,7 +406,8 @@ def telemetri_iste(baglanti, hz: int = TELEMETRI_HIZI_HZ) -> None:
     )
 
 
-def hazir_bekle(baglanti, zaman_asimi_s: float = HAZIR_ZAMAN_ASIMI_S) -> bool:
+def hazir_bekle(baglanti, hz: int = TELEMETRI_HIZI_HZ,
+                zaman_asimi_s: float = HAZIR_ZAMAN_ASIMI_S) -> bool:
     """GPS 3B fix ve ön-arm kontrolleri tamam olana kadar bekler.
 
     Arm komutunu deneme-yanılmayla göndermek yerine önce beklenir: reddedilen
@@ -397,16 +416,22 @@ def hazir_bekle(baglanti, zaman_asimi_s: float = HAZIR_ZAMAN_ASIMI_S) -> bool:
     ortak.log("GPS ve ön-arm kontrolleri bekleniyor...", "BILGI")
     bitis = time.time() + zaman_asimi_s
     son_hb = 0.0
-    prearm_tamam = gps_tamam = False
+    prearm_tamam = gps_tamam = telemetri_var = False
+    son_istek = time.time()
     while time.time() < bitis:
         if time.time() - son_hb >= 1.0:
             gcs_heartbeat(baglanti)
             son_hb = time.time()
+        # Akış isteği bozuk kanalda kaybolmuş olabilir.
+        if not telemetri_var and time.time() - son_istek >= 3.0:
+            telemetri_iste(baglanti, hz)
+            son_istek = time.time()
         msg = baglanti.recv_match(
             type=["SYS_STATUS", "GPS_RAW_INT"], blocking=True, timeout=1
         )
         if msg is None:
             continue
+        telemetri_var = True
         if msg.get_type() == "SYS_STATUS":
             prearm_tamam = bool(msg.onboard_control_sensors_health & PREARM_BITI)
         else:
@@ -435,33 +460,52 @@ def komut_ack_bekle(baglanti, komut: int, zaman_asimi_s: float = 5.0) -> int | N
 
 def param_ayarla(baglanti, ad: str, deger: float) -> None:
     """Bir SITL parametresini ayarlar (ör. rüzgâr)."""
-    baglanti.mav.param_set_send(
-        baglanti.target_system,
-        baglanti.target_component,
-        ad.encode("ascii"),
-        float(deger),
-        mavutil.mavlink.MAV_PARAM_TYPE_REAL32,
-    )
-    ortak.log(f"Parametre ayarlandı: {ad} = {deger}", "BILGI")
+    for _ in range(YENIDEN_DENEME):
+        baglanti.mav.param_set_send(
+            baglanti.target_system,
+            baglanti.target_component,
+            ad.encode("ascii"),
+            float(deger),
+            mavutil.mavlink.MAV_PARAM_TYPE_REAL32,
+        )
+        bitis = time.time() + ACK_ZAMAN_ASIMI_S
+        while time.time() < bitis:
+            msg = baglanti.recv_match(type=["PARAM_VALUE"], blocking=True, timeout=1)
+            if msg is not None and str(msg.param_id).rstrip("\x00") == ad:
+                ortak.log(f"Parametre ayarlandı: {ad} = {deger}", "BILGI")
+                return
+    ortak.log(f"Parametre doğrulanamadı: {ad}", "UYARI")
 
 
-def mod_ayarla(baglanti, mod_adi: str) -> None:
-    """Uçuş modunu adıyla ayarlar (ör. AUTO, TAKEOFF)."""
+def mod_ayarla(baglanti, mod_adi: str) -> bool:
+    """Uçuş modunu adıyla ayarlar (ör. AUTO, TAKEOFF). Kabul edildiyse True döndürür."""
     mod_haritasi = baglanti.mode_mapping()
     if mod_adi not in mod_haritasi:
         ortak.log(f"Mod bulunamadı: {mod_adi}", "UYARI")
-        return
-    baglanti.set_mode(mod_haritasi[mod_adi])
-    ortak.log(f"Mod -> {mod_adi}", "BILGI")
+        return False
+    for _ in range(YENIDEN_DENEME):
+        baglanti.set_mode(mod_haritasi[mod_adi])
+        sonuc = komut_ack_bekle(baglanti, 176, ACK_ZAMAN_ASIMI_S)
+        if sonuc == mavutil.mavlink.MAV_RESULT_ACCEPTED:
+            ortak.log(f"Mod -> {mod_adi}", "BILGI")
+            return True
+        if sonuc is not None:
+            break
+    ortak.log(f"Mod değiştirilemedi: {mod_adi}", "HATA")
+    return False
 
 
 def komut_gonder(baglanti, komut: int, ad: str, *parametreler: float) -> bool:
     """COMMAND_LONG gönderir, ACK bekler. Kabul edildiyse True döndürür."""
     degerler = (list(parametreler) + [0.0] * 7)[:7]
-    baglanti.mav.command_long_send(
-        baglanti.target_system, baglanti.target_component, komut, 0, *degerler,
-    )
-    sonuc = komut_ack_bekle(baglanti, komut)
+    sonuc = None
+    for _ in range(YENIDEN_DENEME):  # ACK gelmezse komut veya yanıt kaybolmuştur
+        baglanti.mav.command_long_send(
+            baglanti.target_system, baglanti.target_component, komut, 0, *degerler,
+        )
+        sonuc = komut_ack_bekle(baglanti, komut, ACK_ZAMAN_ASIMI_S)
+        if sonuc is not None:
+            break
     if sonuc == mavutil.mavlink.MAV_RESULT_ACCEPTED:
         ortak.log(f"{ad} kabul edildi.", "TAMAM")
         return True
@@ -583,7 +627,7 @@ def main() -> int:
     if gorev_yukle(baglanti, gorev_yolu, args.irtifa_farki_m) == 0:
         return basarisiz("görev yüklenemedi")
 
-    if not hazir_bekle(baglanti):
+    if not hazir_bekle(baglanti, args.telemetri_hz):
         return basarisiz("GPS/ön-arm kontrolleri süresinde tamamlanmadı")
 
     # Arm + AUTO + kalkış
@@ -591,7 +635,8 @@ def main() -> int:
     if not komut_gonder(baglanti, mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
                         "Arm", 1):
         return basarisiz("arm komutu kabul edilmedi")
-    mod_ayarla(baglanti, "AUTO")
+    if not mod_ayarla(baglanti, "AUTO"):
+        return basarisiz("AUTO moduna geçilemedi")
     # ArduPlane AUTO modunda otomatik kalkış için
     if not komut_gonder(baglanti, mavutil.mavlink.MAV_CMD_MISSION_START,
                         "MISSION_START"):

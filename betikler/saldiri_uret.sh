@@ -55,8 +55,13 @@ fi
 # (Ayrıntı: belgeler/UCUS_NUMARALARI.md) Sorun varsa hiçbir şey başlatılmadan durur.
 python betikler/ortak.py --kontrol "$UCUS" --yeni --tur "$SALDIRI" || exit 1
 
+# Kanal bozulması: KANAL_PROFIL (temiz, hafif, orta, agir) ve KANAL_TOHUM ortam değişkenleri.
+PROXY_ARG=()
+if [[ -n "${KANAL_PROFIL:-}" ]]; then PROXY_ARG+=(--kanal-profil "$KANAL_PROFIL"); fi
+if [[ -n "${KANAL_TOHUM:-}" ]]; then PROXY_ARG+=(--kanal-tohum "$KANAL_TOHUM"); fi
+
 echo "[BILGI] 1/4 Kayıt proxy'si başlatılıyor (arka planda)..."
-python betikler/kayit_proxy.py --ucus "$UCUS" &
+python betikler/kayit_proxy.py --ucus "$UCUS" "${PROXY_ARG[@]}" &
 PROXY_PID=$!
 sleep 3
 

@@ -86,6 +86,7 @@ Saldırı betikleri (localhost)─┘          (her paketi kaydeder)
 | `betikler/ortak.py` | Ortak yardımcılar + **localhost güvenlik kontrolü** |
 | `betikler/kontrol.py` | Kurulum sağlık kontrolü (TAMAM/HATA) |
 | `betikler/kayit_proxy.py` | MAVLink kayıt proxy'si (projenin kalbi) |
+| `betikler/kanal.py` | Kanal bozulması: gecikme, titreşim, kayıp, zamanlı gönderim |
 | `betikler/kayit_yazici.py` | Arka planda akış hâlinde Parquet yazımı, kurtarma günlüğü |
 | `betikler/proxy_performans.py` | SITL'siz proxy döngü gecikmesi ölçümü |
 | `betikler/ucus_yap.py` | Görev yükler, arm/AUTO/kalkış, uçurur |

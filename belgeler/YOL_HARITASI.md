@@ -38,7 +38,7 @@ Kurallar:
 | [x] | G3 | Normal uçuşa meşru operatör komutları |
 | [x] | G4 | Sahte telemetri yönü |
 | [x] | G5 | Yazma performansı |
-| [ ] | G6 | Kanal bozulması |
+| [x] | G6 | Kanal bozulması |
 | [ ] | G6.5 | Toplu üretim |
 | [ ] | G6.6 | Değerlendirme bölmeleri |
 | [ ] | G7 | Uçtan uca doğrulama |
@@ -428,7 +428,7 @@ yazıldığı için `--kurtar` testte 300 paketin 300'ünü geri getirdi; kayıp
 
 ## G6 — Kanal bozulması
 
-- [ ] **Durum**
+- [x] **Durum**
 
 **Amaç:** Gerçek telsiz kanalı temiz değildir. Model yalnızca kusursuz kanalda
 eğitilirse, gerçek gecikme ve kaybı saldırı sanar. Bozulma proxy içinde (netem
@@ -470,10 +470,24 @@ değil) ve tohumlu olursa üretim üç makinede de tekrar edilebilir.
 - Kanal kodu proxy'nin soket döngüsünden ayrı bir birimde.
 
 **Etkilenen dosyalar:** `betikler/kayit_proxy.py`, `betikler/normal_uretim.sh`,
-`betikler/saldiri_uret.sh`, `config.yaml`, `belgeler/VERI_SEMASI.md`,
-`belgeler/VERI_URETIMI.md`, `tests/`
+`betikler/saldiri_uret.sh`, `betikler/kanal.py` (yeni), `betikler/ucus_yap.py`, `config.yaml`,
+`belgeler/VERI_SEMASI.md`, `belgeler/VERI_URETIMI.md`, `tests/`
 
-**Sonuç:** —
+**Sonuç:** 2026-11-06 — Tamamlandı. `pytest` 201 test geçti. Gerçek SITL ölçümleri:
+
+| Uçuş | Profil | Yön | Paket | Gecikme | Kayıp |
+|------|--------|-----|-------|---------|-------|
+| `F110` | `orta` | gcs2uav | 178 | 80,4 ms | %1,1 |
+| `F110` | `orta` | uav2gcs | 21.407 | 80,7 ms | %2,9 |
+| `F111` | `agir` | gcs2uav | 206 | 197,8 ms | %6,3 |
+| `F111` | `agir` | uav2gcs | 21.390 | 202,0 ms | %7,8 |
+
+gcs2uav kayıp oranları paket sayısı az olduğu için hedeften oynuyor; SITL'siz 20.000 paketlik
+testte profillerle uyumlu. Kanal açıkken p99 0,087 ms. `ucus_yap.py` kaybolan yanıtlar için
+yeniden deneme kazandı; `agir` kanalda da kalkış, görev yükleme ve saldırı başarılı.
+Gözlem: Duvar, gcs2uav'yi gecikmeden sonra ve uav2gcs'yi gecikmeden önce gördüğü için ACK
+gecikmesi kanal gecikmesinden etkilenmez (`orta` 10,8 ms, `agir` 12,5 ms). Bu, duvarın
+konumunun doğal sonucudur. Kanal kodu ayrı birimde: `kanal.py`.
 
 ---
 

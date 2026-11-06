@@ -37,6 +37,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import random
 import select
 import signal
 import socket
@@ -45,6 +46,7 @@ import time
 from datetime import date
 from pathlib import Path
 
+import kanal as kanal_modulu
 import kayit_yazici
 import ortak
 
@@ -63,8 +65,10 @@ SUTUNLAR = kayit_yazici.SUTUNLAR
 class KayitProxy:
     """UDP (GCS tarafı) ile TCP (SITL tarafı) arasında köprü + kayıt."""
 
-    def __init__(self, ucus_id: str, cfg: dict) -> None:
+    def __init__(self, ucus_id: str, cfg: dict,
+                 kanal: kanal_modulu.Kanal | None = None) -> None:
         self.cfg = cfg
+        self.kanal = kanal or kanal_modulu.Kanal()
         self.ucus_id = ucus_id
         self.host = cfg.get("host", "127.0.0.1")
         self.udp_port = int(cfg.get("udp_port", 14550))
@@ -152,8 +156,8 @@ class KayitProxy:
     # Paket çözümleme ve kayıt
     # -----------------------------------------------------------------
     def _paketleri_coz(self, mav, veri: bytes, direction: str,
-                       src_ip: str, src_port: int) -> None:
-        """Ham baytı MAVLink mesajlarına ayrıştırıp tampona ekler."""
+                       src_ip: str, src_port: int) -> list[bytes]:
+        """Ham baytı mesajlara ayırıp kaydeder; mesajların ham baytlarını döndürür."""
         t_ns = ortak.simdi_ns()
         if mav is None:
             # pymavlink yoksa yalnızca ham kaydı tut (çözümsüz).
@@ -164,16 +168,18 @@ class KayitProxy:
                 "is_signed": False, "crc_ok": False, "fields_json": "{}",
                 "raw_hex": veri.hex() if self.raw_hex_kaydet else "",
             })
-            return
+            return [veri]
         try:
             mesajlar = mav.parse_buffer(veri) or []
         except Exception as e:
             ortak.log(f"{direction}: MAVLink ayrıştırma hatası: {e}", "UYARI")
             mesajlar = []
+        hamlar: list[bytes] = []
         for m in mesajlar:
             if m.get_type() == "BAD_DATA":
                 continue
-            ham = m.get_msgbuf()
+            ham = bytes(m.get_msgbuf())
+            hamlar.append(ham)
             try:
                 alanlar = m.to_dict()
                 alanlar.pop("mavpackon", None)
@@ -196,6 +202,38 @@ class KayitProxy:
                 "fields_json": fields_json,
                 "raw_hex": ham.hex() if self.raw_hex_kaydet else "",
             })
+        return hamlar
+
+    def gcs_paketi_al(self, veri: bytes, adres: tuple[str, int]) -> None:
+        """14550'den gelen paket: Telsizden geçmiş sayılır, kayıt bozulmadan sonradır."""
+        self.gcs_adresleri.add(adres)
+        self.kanal.gonder("gcs2uav", lambda: self._sitlye_ilet(veri, adres))
+
+    def _sitlye_ilet(self, veri: bytes, adres: tuple[str, int]) -> None:
+        try:
+            self.tcp_sok.sendall(veri)
+        except OSError as e:
+            ortak.log(f"SITL'ye iletim hatası: {e}", "UYARI")
+        self._paketleri_coz(self._mav_gcs, veri, "gcs2uav", adres[0], adres[1])
+
+    def uav_paketi_al(self, veri: bytes) -> None:
+        """SITL'den gelen paket: Önce kaydedilir, bozulma telsize girerken uygulanır."""
+        self._dinleyenlere_gonder(veri)
+        if self.kanal.temiz:
+            self._gcsye_ilet(veri)
+            self._paketleri_coz(self._mav_uav, veri, "uav2gcs", self.host, self.tcp_port)
+            return
+        hamlar = self._paketleri_coz(self._mav_uav, veri, "uav2gcs", self.host, self.tcp_port)
+        self.kanal.toplu_gonder(
+            "uav2gcs", [lambda ham=ham: self._gcsye_ilet(ham) for ham in hamlar]
+        )
+
+    def _gcsye_ilet(self, veri: bytes) -> None:
+        for adres in list(self.gcs_adresleri):
+            try:
+                self.udp_sok.sendto(veri, adres)
+            except OSError:
+                pass
 
     def enjeksiyonu_isle(self, veri: bytes, adres: tuple[str, int]) -> None:
         """14551'den gelen paketi yer istasyonuna iletir, SITL'ye GÖNDERMEZ.
@@ -204,11 +242,10 @@ class KayitProxy:
         kaynak enjekte eden adrestir.
         """
         self.dinleyen_adresler.add(adres)
-        for hedef in list(self.gcs_adresleri):
-            try:
-                self.udp_sok.sendto(veri, hedef)
-            except OSError:
-                pass
+        self.kanal.gonder("gcs2uav", lambda: self._enjeksiyonu_ilet(veri, adres))
+
+    def _enjeksiyonu_ilet(self, veri: bytes, adres: tuple[str, int]) -> None:
+        self._gcsye_ilet(veri)
         self._paketleri_coz(self._mav_enjeksiyon, veri, "gcs2uav", adres[0], adres[1])
 
     def _dinleyenlere_gonder(self, veri: bytes) -> None:
@@ -239,6 +276,7 @@ class KayitProxy:
             "date": date.today().isoformat(),
             "operator": None,
             "duration_s": None,
+            "kanal": self.kanal.ozet(),
             "notes": "kayit_proxy.py tarafından başlatıldı.",
         }
         with open(self.meta_yolu, "w", encoding="utf-8") as f:
@@ -253,6 +291,7 @@ class KayitProxy:
         except Exception:
             meta = {}
         meta["duration_s"] = round((ortak.simdi_ns() - self.baslangic_ns) / 1e9, 1)
+        meta["kanal"] = self.kanal.ozet()
         with open(self.meta_yolu, "w", encoding="utf-8") as f:
             json.dump(meta, f, ensure_ascii=False, indent=2)
 
@@ -267,54 +306,33 @@ class KayitProxy:
         son_rapor = ortak.simdi_ns()
 
         while self.calisiyor:
+            # Zamanı gelecek paket varsa select onu kaçırmayacak kadar bekler.
+            kalan = self.kanal.sonraki_sure_s()
+            bekleme = 0.5 if kalan is None else min(0.5, kalan)
             okunabilir, _, _ = select.select(
-                [self.udp_sok, self.enjeksiyon_sok, self.tcp_sok], [], [], 0.5
+                [self.udp_sok, self.enjeksiyon_sok, self.tcp_sok], [], [], bekleme
             )
             adim_baslangic = time.perf_counter_ns()
             for sok in okunabilir:
-                if sok is self.udp_sok:
-                    try:
+                try:
+                    if sok is self.udp_sok:
                         veri, adres = self.udp_sok.recvfrom(65535)
-                    except BlockingIOError:
-                        continue
-                    if not veri:
-                        continue
-                    self.gcs_adresleri.add(adres)
-                    # gcs2uav: SITL'ye ilet
-                    try:
-                        self.tcp_sok.sendall(veri)
-                    except OSError as e:
-                        ortak.log(f"SITL'ye iletim hatası: {e}", "UYARI")
-                    self._paketleri_coz(
-                        self._mav_gcs, veri, "gcs2uav", adres[0], adres[1]
-                    )
-                elif sok is self.enjeksiyon_sok:
-                    try:
+                        if veri:
+                            self.gcs_paketi_al(veri, adres)
+                    elif sok is self.enjeksiyon_sok:
                         veri, adres = self.enjeksiyon_sok.recvfrom(65535)
-                    except BlockingIOError:
-                        continue
-                    if veri:
-                        self.enjeksiyonu_isle(veri, adres)
-                elif sok is self.tcp_sok:
-                    try:
+                        if veri:
+                            self.enjeksiyonu_isle(veri, adres)
+                    else:
                         veri = self.tcp_sok.recv(65535)
-                    except BlockingIOError:
-                        continue
-                    if not veri:
-                        ortak.log("SITL bağlantısı kapandı.", "UYARI")
-                        self.calisiyor = False
-                        break
-                    # uav2gcs: 14550'ye yazan herkese geri yolla
-                    for adres in list(self.gcs_adresleri):
-                        try:
-                            self.udp_sok.sendto(veri, adres)
-                        except OSError:
-                            pass
-                    self._dinleyenlere_gonder(veri)
-                    # Otopilot adresini src olarak yaz
-                    self._paketleri_coz(
-                        self._mav_uav, veri, "uav2gcs", self.host, self.tcp_port
-                    )
+                        if not veri:
+                            ortak.log("SITL bağlantısı kapandı.", "UYARI")
+                            self.calisiyor = False
+                            break
+                        self.uav_paketi_al(veri)
+                except BlockingIOError:
+                    continue
+            self.kanal.zamani_gelenleri_gonder()
 
             if self.dongu_sureleri_ns is not None and okunabilir:
                 self.dongu_sureleri_ns.append(time.perf_counter_ns() - adim_baslangic)
@@ -333,6 +351,7 @@ class KayitProxy:
 
     def kapat(self) -> None:
         ortak.log("Kapanıyor; kalan kuyruk yazılıyor...", "BILGI")
+        self.kanal.bosalt()
         self.yazici.kapat()
         self.meta_guncelle_kapanis()
         for s in (self.udp_sok, self.enjeksiyon_sok, self.tcp_sok):
@@ -347,9 +366,10 @@ class KayitProxy:
         )
 
 
-def proxy_calistir(ucus_id: str, cfg: dict) -> None:
+def proxy_calistir(ucus_id: str, cfg: dict,
+                   kanal: kanal_modulu.Kanal | None = None) -> None:
     """Proxy'yi başlatır; Ctrl+C ve SIGTERM'de düzgün kapanır."""
-    proxy = KayitProxy(ucus_id, cfg)
+    proxy = KayitProxy(ucus_id, cfg, kanal)
 
     def _sinyal(imza, cerceve):  # noqa: ANN001, ARG001
         proxy.calisiyor = False
@@ -373,6 +393,13 @@ def main() -> int:
         "--kurtar", metavar="UCUS_ID",
         help="Beklenmedik kapanan uçuşun parquet'ini kurtarma günlüğünden üretir.",
     )
+    ap.add_argument("--kanal-profil", default="temiz",
+                    help="config.yaml'daki kanal profili (temiz, hafif, orta, agir).")
+    ap.add_argument("--kanal-gecikme-ms", type=float, help="Profili ezer: ortalama gecikme.")
+    ap.add_argument("--kanal-jitter-ms", type=float, help="Profili ezer: gecikme titreşimi (±).")
+    ap.add_argument("--kanal-kayip", type=float, help="Profili ezer: paket kaybı yüzdesi.")
+    ap.add_argument("--kanal-tohum", type=int,
+                    help="Kanal tohumu (yoksa rastgele seçilir, meta.json'a yazılır).")
     args = ap.parse_args()
 
     if args.kurtar:
@@ -390,7 +417,19 @@ def main() -> int:
     # Çakışma koruması: numara bu cihazın aralığında mı, daha önce kullanıldı mı?
     ortak.ucus_id_dogrula(ucus_id, cfg, yeni_kayit=True)
 
-    proxy_calistir(ucus_id, cfg)
+    tohum = args.kanal_tohum
+    if tohum is None:
+        tohum = random.SystemRandom().randrange(2**31)
+    try:
+        ayar = kanal_modulu.ayar_olustur(
+            cfg, args.kanal_profil, tohum, args.kanal_gecikme_ms,
+            args.kanal_jitter_ms, args.kanal_kayip,
+        )
+    except ValueError as e:
+        ortak.hata_ve_cik(str(e))
+    ortak.log(f"Kanal: {ayar}", "BILGI")
+
+    proxy_calistir(ucus_id, cfg, kanal_modulu.Kanal(ayar))
     return 0
 
 

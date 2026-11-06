@@ -68,6 +68,28 @@ bash betikler/saldiri_uret.sh F108_replay gorevler/gorev2_uzunhat.waypoints repl
 Beklenen sonuç: uçuş klasöründe `ground_truth.json` (içinde `start_ns`/`end_ns`
 dolu) ve parquet'te o aralıkta saldırgan adresinden paketler.
 
+## Kanal bozulması
+
+Üretim betikleri `KANAL_PROFIL` ve `KANAL_TOHUM` ortam değişkenlerini okur. Profiller
+`config.yaml`'dadır:
+
+| Profil | Gecikme | Kayıp |
+|--------|---------|-------|
+| `temiz` (varsayılan) | 0 | %0 |
+| `hafif` | 20 ± 5 ms | %1 |
+| `orta` | 80 ± 20 ms | %3 |
+| `agir` | 200 ± 60 ms | %8 |
+
+```bash
+KANAL_PROFIL=orta KANAL_TOHUM=21 \
+  bash betikler/normal_uretim.sh F110_normal gorevler/gorev2_uzunhat.waypoints 150 3 90
+```
+
+Bozulma duvarın konumuna göre uygulanır: Telsizden gelen paket (`gcs2uav`) önce bozulur
+sonra kaydedilir, kaybolan paket kayıtta yoktur. Uçaktan çıkan paket (`uav2gcs`) önce
+kaydedilir sonra bozulur, kaybolan paket kayıtta durur ama yer istasyonuna ulaşmaz. Bu
+yüzden duvarın ölçtüğü ACK gecikmesi kanal gecikmesinden etkilenmez.
+
 ## 3) İşleme
 
 ```bash
