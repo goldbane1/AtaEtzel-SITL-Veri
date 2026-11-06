@@ -6,6 +6,7 @@ Bir uçuş için şunları denetler ve Türkçe TAMAM/EKSİK raporlar:
   - paketler.parquet var mı ve boş değil mi
   - iki yön de (gcs2uav ve uav2gcs) mevcut mu
   - HEARTBEAT akıyor mu
+  - kayıtta büyük boşluk var mı (makine uykuya geçtiyse)
   - meta.json var ve dolu mu
   - saldırılıysa: ground_truth.json var mı ve etiketlerle tutarlı mı
     (saldırı aralığında gerçekten saldırı etiketli paket var mı)
@@ -33,6 +34,7 @@ except ImportError:
 
 PENCERE_NS = 1_000_000_000  # 1 saniye
 TEMIZ_BOLUM_NS = 16 * PENCERE_NS
+BOSLUK_ESIGI_NS = 5 * PENCERE_NS
 
 
 def pencere_sorunlari(pencereler: "pd.DataFrame", paketler: "pd.DataFrame") -> list[str]:
@@ -55,6 +57,21 @@ def pencere_sorunlari(pencereler: "pd.DataFrame", paketler: "pd.DataFrame") -> l
     if int(baslangiclar.iloc[0]) != t0:
         sorunlar.append("ilk pencere ilk paketle başlamıyor")
     return sorunlar
+
+
+def kayit_boslugu_sorunlari(paketler: "pd.DataFrame") -> list[str]:
+    """Uçaktan gelen akışta büyük boşluk varsa bildirir.
+
+    Telemetri hiç kesilmez. Boşluk, makinenin uykuya geçtiğini ya da kaydın
+    durduğunu gösterir; böyle bir uçuş veri setine girmemelidir.
+    """
+    tler = paketler.loc[paketler["direction"] == "uav2gcs", "t_ns"].astype("int64").sort_values()
+    if len(tler) < 2:
+        return []
+    en_buyuk = int(tler.diff().max())
+    if en_buyuk > BOSLUK_ESIGI_NS:
+        return [f"kayıtta {en_buyuk / 1e9:.0f} sn boşluk var (makine uykuya geçmiş olabilir)"]
+    return []
 
 
 def saldiri_zamanlama_sorunlari(saldirilar: list[dict], kalkis_ns: int | None,
@@ -109,6 +126,7 @@ def bir_ucus_dogrula(ucus_id: str, cfg: dict) -> bool:
                 sorunlar.append("uav2gcs yönü yok")
             if "HEARTBEAT" not in set(df["msgname"].unique()):
                 sorunlar.append("HEARTBEAT akmıyor")
+            sorunlar.extend(kayit_boslugu_sorunlari(df))
 
     # meta.json
     meta_yolu = klasor / "meta.json"

@@ -62,6 +62,7 @@ DURUM_ARALIK_S = (12.0, 18.0)      # zararsız durum sorguları arası süre
 ACK_ZAMAN_ASIMI_S = 3.0
 YENIDEN_DENEME = 4                 # bozuk kanalda kaybolan yanıt için deneme sayısı
 GOREV_YUKLEME_SURESI_S = 60.0
+DONMA_ESIGI_S = 5.0                # döngü bu kadar duraksarsa makine uyumuş demektir
 OPERATOR_ISLEMLERI = ("mod_dongusu", "hiz_degistir", "param_oku",
                       "gorev_sirasi", "mesaj_hizi")
 OKUNACAK_PARAMLAR = ("WP_RADIUS", "WP_LOITER_RAD", "RTL_RADIUS", "RTL_ALTITUDE")
@@ -287,6 +288,14 @@ class OperatorYurutucu:
             if hepsi or simdi > bekleyen["son"]:
                 bekleyen["kayit"]["ack"] = "zaman_asimi"
                 self.bekleyenler.remove(bekleyen)
+
+
+def donma_var_mi(onceki_s: float, simdi_s: float) -> bool:
+    """Ana döngü iki tur arasında donduysa True (makine uykuya geçmiş olabilir).
+
+    Uykuda SITL de durur; kayıtta saatlerce boşluk kalır, zamanlama bozulur.
+    """
+    return simdi_s - onceki_s > DONMA_ESIGI_S
 
 
 def ucus_sonucu_yaz(ucus_id: str, cfg: dict, kalkis: dict,
@@ -652,7 +661,11 @@ def main() -> int:
 
     baslangic = time.time()
     son_hb = 0.0
+    son_tur = time.time()
     while time.time() - baslangic < args.sure:
+        if donma_var_mi(son_tur, time.time()):
+            return basarisiz(f"uçuş {time.time() - son_tur:.0f} sn dondu (makine uykuya geçmiş olabilir)")
+        son_tur = time.time()
         if time.time() - son_hb >= 1.0:
             gcs_heartbeat(baglanti)
             son_hb = time.time()

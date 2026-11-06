@@ -41,7 +41,7 @@ Kurallar:
 | [x] | G6 | Kanal bozulması |
 | [x] | G6.5 | Toplu üretim |
 | [x] | G6.6 | Değerlendirme bölmeleri |
-| [ ] | G7 | Uçtan uca doğrulama |
+| [x] | G7 | Uçtan uca doğrulama |
 | [ ] | G8 | Tam veri seti üretimi |
 
 Bir görev bitince hem aşağıdaki kutucuğu hem bu tablodaki satırı `[x]` yapın.
@@ -635,7 +635,7 @@ dışında tutuldu.
 
 ## G7 — Uçtan uca doğrulama
 
-- [ ] **Durum**
+- [x] **Durum**
 
 **Amaç:** Tüm parçaların birlikte çalıştığını, gerçek SITL verisiyle ve ölçülmüş
 sayılarla göstermek. Toplu üretime güvenmeden önceki son kapı budur.
@@ -664,11 +664,15 @@ sayılarla göstermek. Toplu üretime güvenmeden önceki son kapı budur.
 - Pencere sayısı uçuş süresiyle uyumlu.
 - `orta` profilinde ölçülen gecikme ve kayıp 80 ± 20 ms, %3 değerleriyle uyumlu.
 
-**Etkilenen dosyalar:** rapor belgesi (yeni, yeri görevde belirlenir),
+**Etkilenen dosyalar:** `belgeler/G7_RAPOR.md` (yeni),
 `belgeler/YOL_HARITASI.md`; sorun çıkarsa ilgili betikler ve
 `belgeler/SORUN_GIDERME.md`
 
-**Sonuç:** —
+**Sonuç:** 2026-11-06 — Tamamlandı. `pytest` 339 test geçti. Rapor: [G7_RAPOR.md](G7_RAPOR.md). 4 uçuşa
+`dogrula.py` TAMAM dedi; pencere sayıları süreyle birebir uyumlu, saldırı paketlerinin tamamı
+doğru etiketli. `fake_telemetry` 151 paketin tamamı `gcs2uav` ve uçağın sysid'iyle. `orta` kanalda
+ölçülen 80,4 / 80,1 ms, %2,18 / %3,01. `F125` makine uykuya geçtiği için geçersiz sayıldı ve
+yeniden uçuruldu (`F127`); uyku engeli ve donma kontrolleri eklendi.
 
 ---
 

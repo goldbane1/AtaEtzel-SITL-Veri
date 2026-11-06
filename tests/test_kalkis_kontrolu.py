@@ -131,3 +131,8 @@ def test_basarili_ucus_meta_jsona_yazilir(tmp_path):
     )
     assert meta["ucus_basarili"] is True
     assert meta["basarisizlik_nedeni"] is None
+
+
+def test_donma_uyku_olarak_algilanir():
+    assert ucus_yap.donma_var_mi(100.0, 106.0)
+    assert not ucus_yap.donma_var_mi(100.0, 101.2)

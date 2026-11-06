@@ -124,8 +124,10 @@ Bir uçuş başarısız olursa loglanır, `meta.json`'a `ucus_basarili: false` y
 geçilir. Başarısız uçuşlar etiketleme, öznitelik ve bölmeye girmez; `dogrula.py` bunları ayrı
 gösterir. Sonda özet tablo basılır.
 
-Uçuş başı yaklaşık 5 dk sürer, gecede ~95 uçuş eder. Bilgisayarın uyku moduna geçmediğinden
-emin olun.
+Uçuş başı yaklaşık 5 dk sürer, gecede ~95 uçuş eder. `toplu_uretim.py` üretim boyunca uykuyu
+`systemd-inhibit` ile engeller; WSL gibi ortamlarda engel alınamazsa uyarı verir. **Tek tek
+çalıştırılan uçuşlarda** bu engel yoktur: Makinenin uykuya geçmediğinden siz emin olun.
+Uykuya geçen uçuş başarısız sayılır, `dogrula.py` da kayıttaki boşluğu reddeder.
 
 ## 3) İşleme
 

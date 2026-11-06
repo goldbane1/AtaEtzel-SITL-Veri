@@ -56,6 +56,13 @@ Her sorun için **belirti → neden → çözüm** verilmiştir.
 - **Çözüm:** `python betikler/kayit_proxy.py --kurtar <ucus_id>`. Kayıp en fazla son ~1 sn'dir.
   Yarım uçuşu veri setine katmayın.
 
+## "kayıtta ... sn boşluk var" / uçuş saatlerce sürmüş görünüyor
+- **Neden:** Makine uçuş sırasında uykuya geçti. SITL ve proxy donar, uyanınca kaldığı yerden
+  devam eder; kayıtta boşluk kalır. Sistem günlüğünden doğrulayın:
+  `journalctl --since today | grep -i suspend`.
+- **Çözüm:** O uçuşu veri setine katmayın. `toplu_uretim.py` uykuyu kendisi engeller; tek uçuşta
+  `systemd-inhibit --what=sleep:idle --mode=block bash betikler/normal_uretim.sh ...` kullanın.
+
 ## İkinci uçuş tuhaf davranıyor / uçak zaten havada
 - **Neden:** SITL açık kaldı; önceki uçuşun uçağı hâlâ uçuyor.
 - **Çözüm:** Her uçuştan önce SITL'yi yeniden başlatın. `sim_vehicle.py`'yi kapatmak

@@ -290,6 +290,34 @@ def bir_ucus_yap(ucus: dict, cfg: dict) -> tuple[str, bool]:
     return ucus_id, basarili
 
 
+def uyku_engelle() -> subprocess.Popen | None:
+    """Üretim boyunca makinenin uykuya geçmesini engeller.
+
+    Uyku uçuşu ortasında dondurur: Saatlerce boşluklu, geçersiz kayıt oluşur (G7).
+    Engel alınamazsa üretim yine başlar ama açık uyarı verilir.
+    """
+    if shutil.which("systemd-inhibit") is None:
+        ortak.log("systemd-inhibit yok: Makinenin uykuya geçmediğinden emin olun.", "UYARI")
+        return None
+    surec = subprocess.Popen(
+        ["systemd-inhibit", "--what=sleep:idle", "--who=AtaEtzel", "--mode=block",
+         "--why=Toplu uçuş üretimi", "sleep", "infinity"],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True,
+    )
+    time.sleep(0.5)
+    if surec.poll() is not None:
+        ortak.log("Uyku engeli alınamadı: Makinenin uykuya geçmediğinden emin olun.", "UYARI")
+        return None
+    ortak.log("Üretim boyunca uyku engellendi.", "TAMAM")
+    return surec
+
+
+def uyku_serbest_birak(surec: subprocess.Popen | None) -> None:
+    if surec is not None:
+        os.killpg(surec.pid, signal.SIGTERM)
+        surec.wait()
+
+
 def ozet_yaz(sonuclar: list[tuple[dict, str, bool]], sure_s: float) -> None:
     uretilen = sum(1 for _, _, b in sonuclar if b)
     print("")
@@ -338,10 +366,14 @@ def main() -> int:
 
     baslangic = time.time()
     sonuclar = []
-    for sira, ucus in enumerate(plan, 1):
-        ortak.log(f"Uçuş {sira}/{len(plan)}", "BILGI")
-        ucus_id, basarili = bir_ucus_yap(ucus, cfg)
-        sonuclar.append((ucus, ucus_id, basarili))
+    uyku_engeli = uyku_engelle()
+    try:
+        for sira, ucus in enumerate(plan, 1):
+            ortak.log(f"Uçuş {sira}/{len(plan)}", "BILGI")
+            ucus_id, basarili = bir_ucus_yap(ucus, cfg)
+            sonuclar.append((ucus, ucus_id, basarili))
+    finally:
+        uyku_serbest_birak(uyku_engeli)
 
     if args.isleme:
         betikler = Path(__file__).resolve().parent

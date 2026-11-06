@@ -104,7 +104,8 @@ Saldırı betikleri (localhost)─┘          (her paketi kaydeder)
 
 **Belgeler:** `KURULUM.md` → `VERI_URETIMI.md` → `VERI_PAYLASIMI.md` (sıralı);
 `VERI_SEMASI.md`, `SORUN_GIDERME.md` ve `UCUS_NUMARALARI.md` başvuru belgeleri;
-`MIMARI.md` sistemin bütünü; `YOL_HARITASI.md` görev takibinin tek doğru kaynağı.
+`MIMARI.md` sistemin bütünü; `YOL_HARITASI.md` görev takibinin tek doğru kaynağı;
+`G7_RAPOR.md` uçtan uca doğrulama raporu.
 Bir konuda çalışmadan önce
 ilgili belgeyi oku; kodu değiştirirsen belgeyi de güncelle.
 

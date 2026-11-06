@@ -222,3 +222,13 @@ def test_dogrula_kesintili_ucusa_eksik_der(tmp_path, monkeypatch):
 def test_ana_akis_sutunlari_tam():
     sonuc = tablo([paket(0.0)])
     assert set(komut_yanit.SUTUNLAR) <= set(sonuc.columns)
+
+
+def test_kayit_boslugu_yakalanir():
+    bosluklu = pd.DataFrame([paket(0.0), paket(1.0), paket(6000.0)])
+    assert any("boşluk" in s for s in dogrula.kayit_boslugu_sorunlari(bosluklu))
+
+
+def test_normal_akista_bosluk_yok_ve_gcs_yonu_sayilmaz():
+    df = pd.DataFrame([paket(0.0), paket(0.5), paket(60.0, G, sysid=255), paket(1.0)])
+    assert dogrula.kayit_boslugu_sorunlari(df) == []

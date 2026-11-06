@@ -182,3 +182,10 @@ def test_gecikmeli_son_saldiri_paketi_etiketlenir(tmp_path):
     etiketle.bir_ucus_etiketle("F100_flood", cfg)
     assert pd.read_parquet(klasor / "paketler.parquet")["label"].tolist() == [
         "flood", "flood", "normal"]
+
+
+def test_uyku_engeli_alinamazsa_uretim_durmaz(monkeypatch, capsys):
+    monkeypatch.setattr(toplu_uretim.shutil, "which", lambda ad: None)
+    assert toplu_uretim.uyku_engelle() is None
+    assert "uykuya geçmediğinden" in capsys.readouterr().out
+    toplu_uretim.uyku_serbest_birak(None)
