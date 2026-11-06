@@ -29,20 +29,20 @@ def test_akis_basindaki_coplukten_sonra_mesajlar_aninda_cozulur(tmp_path):
     """
     proxy = _proxy(tmp_path)
     proxy._paketleri_coz(proxy._mav_uav, b"\x10" * 64 + _heartbeat(), "uav2gcs", "127.0.0.1", 5760)
-    assert len(proxy.tampon) == 1
+    assert len(proxy.yazici.kuyruk) == 1
 
     for beklenen in range(2, 6):
         proxy._paketleri_coz(proxy._mav_uav, _heartbeat(), "uav2gcs", "127.0.0.1", 5760)
-        assert len(proxy.tampon) == beklenen
+        assert len(proxy.yazici.kuyruk) == beklenen
 
 
 def test_parcalanmis_mesaj_tamamlaninca_cozulur(tmp_path):
     proxy = _proxy(tmp_path)
     ham = _heartbeat()
     proxy._paketleri_coz(proxy._mav_uav, ham[:5], "uav2gcs", "127.0.0.1", 5760)
-    assert len(proxy.tampon) == 0
+    assert len(proxy.yazici.kuyruk) == 0
     proxy._paketleri_coz(proxy._mav_uav, ham[5:], "uav2gcs", "127.0.0.1", 5760)
-    assert len(proxy.tampon) == 1
+    assert len(proxy.yazici.kuyruk) == 1
 
 
 def test_iki_yonun_ayristiricisi_saglam_modda(tmp_path):

@@ -50,6 +50,12 @@ Her sorun için **belirti → neden → çözüm** verilmiştir.
   waypoint ilerlemedi. Betik 1 koduyla çıkar, saldırılı uçuşta saldırı hiç başlamaz.
 - **Çözüm:** `kalkis_kontrolu` alanlarına bakın; o uçuşu veri setine katmayın.
 
+## `paketler.parquet` okunamıyor / yanında `.kurtarma.arrows` dosyası var
+- **Neden:** Proxy düzgün kapanmadı (`kill -9`, elektrik kesintisi). Parquet'in son özeti
+  yazılmadığı için dosya okunamaz; veri kurtarma günlüğünde durur.
+- **Çözüm:** `python betikler/kayit_proxy.py --kurtar <ucus_id>`. Kayıp en fazla son ~1 sn'dir.
+  Yarım uçuşu veri setine katmayın.
+
 ## İkinci uçuş tuhaf davranıyor / uçak zaten havada
 - **Neden:** SITL açık kaldı; önceki uçuşun uçağı hâlâ uçuyor.
 - **Çözüm:** Her uçuştan önce SITL'yi yeniden başlatın. `sim_vehicle.py`'yi kapatmak

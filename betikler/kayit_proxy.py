@@ -29,7 +29,8 @@ Kullanım:
     python betikler/kayit_proxy.py --ucus F101_normal
     python betikler/kayit_proxy.py            # otomatik sonraki normal numara
 
-Durdurma: Ctrl+C. Kapanırken kalan tampon diske yazılır ve meta.json güncellenir.
+Durdurma: Ctrl+C. Kapanırken kalan kuyruk diske yazılır ve meta.json güncellenir.
+Beklenmedik kapanma sonrası: python betikler/kayit_proxy.py --kurtar F101_normal
 """
 
 from __future__ import annotations
@@ -40,15 +41,12 @@ import select
 import signal
 import socket
 import sys
+import time
 from datetime import date
 from pathlib import Path
 
+import kayit_yazici
 import ortak
-
-try:
-    import pandas as pd
-except ImportError:
-    pd = None
 
 try:
     from pymavlink import mavutil
@@ -58,16 +56,8 @@ except ImportError:
     mavlink2 = None
 
 
-# paketler.parquet sütun sırası (VERI_SEMASI.md ile birebir).
-SUTUNLAR = [
-    "t_ns", "direction", "src_ip", "src_port", "sysid", "compid",
-    "seq", "msgid", "msgname", "length", "is_signed", "crc_ok",
-    "fields_json", "raw_hex",
-]
-
-# Tamponu diske yazma eşiği (paket adedi) ve süre (saniye).
-TAMPON_PAKET_ESIGI = 500
-TAMPON_SURE_ESIGI = 2.0
+# paketler.parquet sütunları kayit_yazici.py içindeki açık şemada tanımlıdır.
+SUTUNLAR = kayit_yazici.SUTUNLAR
 
 
 class KayitProxy:
@@ -92,9 +82,10 @@ class KayitProxy:
         self.dinleyen_adresler: set[tuple[str, int]] = set()
 
         # Tampon ve sayaçlar
-        self.tampon: list[dict] = []
+        self.yazici = kayit_yazici.AkisYazici(self.parquet_yolu)
         self.toplam_paket = 0
-        self.son_yazma = ortak.simdi_ns()
+        # Doluysa her döngü adımının işlem süresi buraya yazılır (performans ölçümü).
+        self.dongu_sureleri_ns: list[int] | None = None
         self.baslangic_ns = ortak.simdi_ns()
 
         # MAVLink çözümleyiciler (her yön için ayrı, seq takibi doğru olsun)
@@ -229,31 +220,9 @@ class KayitProxy:
                 pass
 
     def _tampona_ekle(self, satir: dict) -> None:
-        self.tampon.append(satir)
+        """Paketi yazıcı kuyruğuna verir; disk beklenmez."""
+        self.yazici.ekle(satir)
         self.toplam_paket += 1
-        simdi = ortak.simdi_ns()
-        sure_gecti = (simdi - self.son_yazma) / 1e9 >= TAMPON_SURE_ESIGI
-        if len(self.tampon) >= TAMPON_PAKET_ESIGI or sure_gecti:
-            self.tamponu_yaz()
-
-    def tamponu_yaz(self) -> None:
-        """Tampondaki satırları parquet'e EKLER (append) ve tamponu boşaltır."""
-        if not self.tampon:
-            self.son_yazma = ortak.simdi_ns()
-            return
-        if pd is None:
-            ortak.log("pandas yok; parquet'e yazılamıyor. Tampon atlandı.", "UYARI")
-            self.tampon.clear()
-            return
-        yeni = pd.DataFrame(self.tampon, columns=SUTUNLAR)
-        if self.parquet_yolu.exists():
-            eski = pd.read_parquet(self.parquet_yolu)
-            birlesik = pd.concat([eski, yeni], ignore_index=True)
-        else:
-            birlesik = yeni
-        birlesik.to_parquet(self.parquet_yolu, index=False)
-        self.tampon.clear()
-        self.son_yazma = ortak.simdi_ns()
 
     # -----------------------------------------------------------------
     # meta.json
@@ -293,6 +262,7 @@ class KayitProxy:
     def calistir(self) -> None:
         self.soketleri_ac()
         self.meta_baslat()
+        self.yazici.baslat()
         ortak.log(f"Kayıt başladı: {self.ucus_id}. Durdurmak için Ctrl+C.", "BILGI")
         son_rapor = ortak.simdi_ns()
 
@@ -300,6 +270,7 @@ class KayitProxy:
             okunabilir, _, _ = select.select(
                 [self.udp_sok, self.enjeksiyon_sok, self.tcp_sok], [], [], 0.5
             )
+            adim_baslangic = time.perf_counter_ns()
             for sok in okunabilir:
                 if sok is self.udp_sok:
                     try:
@@ -345,11 +316,11 @@ class KayitProxy:
                         self._mav_uav, veri, "uav2gcs", self.host, self.tcp_port
                     )
 
-            # Periyodik tampon kontrolü (trafik yoksa da yazsın)
-            simdi = ortak.simdi_ns()
-            if (simdi - self.son_yazma) / 1e9 >= TAMPON_SURE_ESIGI and self.tampon:
-                self.tamponu_yaz()
+            if self.dongu_sureleri_ns is not None and okunabilir:
+                self.dongu_sureleri_ns.append(time.perf_counter_ns() - adim_baslangic)
+
             # Her ~5 sn'de bir hız raporu
+            simdi = ortak.simdi_ns()
             if (simdi - son_rapor) / 1e9 >= 5.0:
                 hiz = self.toplam_paket / max((simdi - self.baslangic_ns) / 1e9, 1e-9)
                 ortak.log(
@@ -361,8 +332,8 @@ class KayitProxy:
         self.kapat()
 
     def kapat(self) -> None:
-        ortak.log("Kapanıyor; kalan tampon yazılıyor...", "BILGI")
-        self.tamponu_yaz()
+        ortak.log("Kapanıyor; kalan kuyruk yazılıyor...", "BILGI")
+        self.yazici.kapat()
         self.meta_guncelle_kapanis()
         for s in (self.udp_sok, self.enjeksiyon_sok, self.tcp_sok):
             try:
@@ -376,27 +347,8 @@ class KayitProxy:
         )
 
 
-def main() -> int:
-    ap = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
-    )
-    ap.add_argument(
-        "--ucus",
-        help="Uçuş adı (ör. F101_normal). Verilmezse config aralığından "
-        "sonraki normal numara otomatik üretilir.",
-    )
-    args = ap.parse_args()
-
-    if pd is None:
-        ortak.log("pandas/pyarrow kurulu değil; parquet yazılamaz. setup.sh çalıştırın.", "UYARI")
-    if mavutil is None:
-        ortak.log("pymavlink kurulu değil; paketler çözümlenemez. setup.sh çalıştırın.", "UYARI")
-
-    cfg = ortak.config_oku()
-    ucus_id = args.ucus or ortak.sonraki_ucus_id("normal", cfg)
-    # Çakışma koruması: numara bu cihazın aralığında mı, daha önce kullanıldı mı?
-    ortak.ucus_id_dogrula(ucus_id, cfg, yeni_kayit=True)
-
+def proxy_calistir(ucus_id: str, cfg: dict) -> None:
+    """Proxy'yi başlatır; Ctrl+C ve SIGTERM'de düzgün kapanır."""
     proxy = KayitProxy(ucus_id, cfg)
 
     def _sinyal(imza, cerceve):  # noqa: ANN001, ARG001
@@ -406,6 +358,39 @@ def main() -> int:
     signal.signal(signal.SIGTERM, _sinyal)
 
     proxy.calistir()
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    ap.add_argument(
+        "--ucus",
+        help="Uçuş adı (ör. F101_normal). Verilmezse config aralığından "
+        "sonraki normal numara otomatik üretilir.",
+    )
+    ap.add_argument(
+        "--kurtar", metavar="UCUS_ID",
+        help="Beklenmedik kapanan uçuşun parquet'ini kurtarma günlüğünden üretir.",
+    )
+    args = ap.parse_args()
+
+    if args.kurtar:
+        yol = ortak.ucus_klasoru(args.kurtar) / "paketler.parquet"
+        if not kayit_yazici.kurtarma_yolu(yol).exists():
+            ortak.hata_ve_cik(f"Kurtarma günlüğü yok: {args.kurtar}")
+        ortak.log(f"{kayit_yazici.kurtar(yol)} paket kurtarıldı -> {yol}", "TAMAM")
+        return 0
+
+    if mavutil is None:
+        ortak.log("pymavlink kurulu değil; paketler çözümlenemez. setup.sh çalıştırın.", "UYARI")
+
+    cfg = ortak.config_oku()
+    ucus_id = args.ucus or ortak.sonraki_ucus_id("normal", cfg)
+    # Çakışma koruması: numara bu cihazın aralığında mı, daha önce kullanıldı mı?
+    ortak.ucus_id_dogrula(ucus_id, cfg, yeni_kayit=True)
+
+    proxy_calistir(ucus_id, cfg)
     return 0
 
 

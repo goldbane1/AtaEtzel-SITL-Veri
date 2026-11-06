@@ -37,7 +37,7 @@ Kurallar:
 | [x] | G2 | Boş pencereler |
 | [x] | G3 | Normal uçuşa meşru operatör komutları |
 | [x] | G4 | Sahte telemetri yönü |
-| [ ] | G5 | Yazma performansı |
+| [x] | G5 | Yazma performansı |
 | [ ] | G6 | Kanal bozulması |
 | [ ] | G6.5 | Toplu üretim |
 | [ ] | G6.6 | Değerlendirme bölmeleri |
@@ -382,7 +382,7 @@ testte doğrulandı, gerçek uçuşta G6.5 veya G7'de görülecek.
 
 ## G5 — Yazma performansı
 
-- [ ] **Durum**
+- [x] **Durum**
 
 **Amaç:** `kayit_proxy.py` her yazmada mevcut dosyayı okuyup baştan yazıyor. Dosya
 büyüdükçe yazma yavaşlar ve bu sırada ana döngü durur; paket zaman damgaları bozulur,
@@ -414,9 +414,15 @@ yüksek hızlı flood sırasında kayıp olabilir.
 - Yazma kodu proxy'nin soket döngüsünden ayrı bir birimde; ileride güvenlik duvarı
   kararı aynı noktaya eklenebilir (`MIMARI.md` 5. bölüm).
 
-**Etkilenen dosyalar:** `betikler/kayit_proxy.py`, `tests/`
+**Etkilenen dosyalar:** `betikler/kayit_proxy.py`, `betikler/kayit_yazici.py` (yeni),
+`betikler/proxy_performans.py` (yeni), `belgeler/SORUN_GIDERME.md`, `tests/`
 
-**Sonuç:** —
+**Sonuç:** 2026-11-06 — Tamamlandı. `pytest` 175 test geçti. 60 sn, 500 paket/sn ölçümü:
+30.000 paketin hepsi kaydedildi; döngü gecikmesi ortalama 0,058 ms, p99 0,085 ms, en büyük
+13,75 ms. Yazma ayrı iş parçacığında, ayrı dosyada (`kayit_yazici.py`). Eski ve yeni dosyalar
+pandas ile birebir aynı okunuyor; gerçek `F102` verisiyle de doğrulandı. Ctrl+C ve SIGTERM
+kapanışı kayıpsız. `kill -9` sonrası Parquet okunamıyor, ama her parti kurtarma günlüğüne de
+yazıldığı için `--kurtar` testte 300 paketin 300'ünü geri getirdi; kayıp sınırı ~1 sn.
 
 ---
 

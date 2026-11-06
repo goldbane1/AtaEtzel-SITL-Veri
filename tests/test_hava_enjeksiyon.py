@@ -64,7 +64,7 @@ def test_enjeksiyon_gcsye_gider_sitlye_gitmez_ve_gcs2uav_kaydedilir(tmp_path):
 
     assert proxy.udp_sok.gonderilen == [(ham, GCS)]
     assert proxy.tcp_sok.gonderilen == []
-    satir = proxy.tampon[0]
+    satir = proxy.yazici.kuyruk[0]
     assert satir["direction"] == "gcs2uav"
     assert (satir["src_ip"], satir["src_port"]) == SALDIRGAN
     assert satir["sysid"] == 1
@@ -75,7 +75,7 @@ def test_enjeksiyon_etiketlemede_fake_telemetry_olur(tmp_path):
     cfg = {"veri_klasoru": str(tmp_path)}
     proxy = _proxy(tmp_path)
     proxy.enjeksiyonu_isle(_sahte_paket(), SALDIRGAN)
-    proxy.tamponu_yaz()
+    proxy.yazici.kapat()
     ortak.ground_truth_ekle("F100_fake_telemetry", {
         "attack_type": "fake_telemetry", "start_ns": 0, "end_ns": ortak.simdi_ns(),
         "attacker_addr": f"{SALDIRGAN[0]}:{SALDIRGAN[1]}", "params": {},
@@ -97,10 +97,10 @@ def test_enjeksiyon_ayri_ayristirici_kullanir(tmp_path):
 def test_enjekte_eden_adres_telemetri_kopyasi_alir_kayit_olusmaz(tmp_path):
     proxy = _proxy(tmp_path)
     proxy.enjeksiyonu_isle(_sahte_paket(), SALDIRGAN)
-    kayit_sayisi = len(proxy.tampon)
+    kayit_sayisi = len(proxy.yazici.kuyruk)
     proxy._dinleyenlere_gonder(b"telemetri")
     assert proxy.enjeksiyon_sok.gonderilen == [(b"telemetri", SALDIRGAN)]
-    assert len(proxy.tampon) == kayit_sayisi
+    assert len(proxy.yazici.kuyruk) == kayit_sayisi
 
 
 def test_gercek_soketle_enjeksiyon_portu_yalnizca_localhosta_acilir(tmp_path):
