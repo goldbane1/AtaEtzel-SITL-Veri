@@ -92,14 +92,34 @@ tutulur:
 
 ## `pencereler.parquet` (1 sn'lik öznitelikler)
 
+Pencereler **kesintisizdir**: İlk paketten son pakete kadar her saniye için tam bir
+satır vardır (`window_start_ns` adımı tam 1 sn). Boş saniyede sayımlar 0 olur.
+
 `flight_id`, `window_start_ns`, ardından öznitelik sütunları:
 
 - `toplam_paket` — penceredeki toplam paket sayısı
-- `n_<MSG>` — mesaj türüne göre sayılar (ör. `n_HEARTBEAT`, `n_COMMAND_LONG`)
+- `paket_gcs2uav`, `paket_uav2gcs` — yön başına paket sayısı
+- `bos_pencere` — pencerede hiç paket yoksa 1
+- `son_paketten_beri_s` — pencere bitişinde son paketten beri geçen süre
+- `n_<MSG>` — mesaj türüne göre sayılar (ör. `n_HEARTBEAT`, `n_COMMAND_ACK`)
+- `n_g2u_<MSG>`, `n_u2g_<MSG>` — aynı sayılar yön başına
 - `farkli_sysid` — farklı sysid sayısı
-- `seq_atlama`, `seq_tekrar` — sıra numarası atlama / tekrar sayısı
+- `seq_atlama`, `seq_tekrar` — yön + sysid + compid akışı başına sıra numarası atlama /
+  tekrar sayısı; pencere sınırında önceki pencereden devam eder
 - `paket_arasi_ort_s`, `paket_arasi_std_s` — paketler arası sürenin ortalama/std'si
+- `paket_arasi_ort_s_g2u`, `paket_arasi_std_s_g2u`, `paket_arasi_ort_s_u2g`,
+  `paket_arasi_std_s_u2g` — aynı değerler yön başına
 - `komut_sayisi` — komut mesajı sayısı
+
+Komutu kim, nasıl gönderdi (`COMMAND_LONG`, `COMMAND_INT`, `SET_MODE`; gcs2uav):
+
+- `gcs_akis_sayisi` — penceredeki farklı sysid + compid akışı sayısı
+- `gcs_sysid_seq_bozulma` — aynı sysid içinde, compid ayrımı yapmadan seq süreksizliği
+- `ayni_komut_tekrari` — aynı komutun tekrar sayısı (ilk geçiş hariç)
+- `kritik_komut_sayisi` — mod değişimi, arm/disarm, RTL, iniş, görev başlatma gibi kritik
+  komut sayısı
+- `komut_araligi_min_s` — bir önceki komuttan geçen en kısa süre; önceki pencerelere de
+  bakar, üst sınırı ve komutsuz pencere değeri 60 sn
 
 Komut–yanıt tutarlılığı (`betikler/komut_yanit.py`). Eşleştirme sysid ile değil, yön +
 içerikle yapılır; bir pencere yalnızca kendi bitişine kadarki veriyi kullanır.
@@ -125,10 +145,16 @@ Notlar:
 - Görev sonunda RTL'ye geçiş gibi meşru otomatik değişimler de
   `komutsuz_mod_degisimi` sayılır; açılış modundan (`INITIALISING`) çıkış sayılmaz.
 
-En sonda:
+En sonda **etiket sütunları** gelir. Bunlar ground truth'tan türer, **modele girdi
+olarak verilmez** (veri sızıntısı):
 
-- `label` — `normal` veya pencerede baskın saldırı türü
+- `saldiri_araliginda` — pencere bir saldırı aralığıyla örtüşüyorsa 1
+- `saldiri_turu_aralik` — en çok örtüşen saldırı türü, yoksa `normal`
 - `attack_ratio` — penceredeki saldırı paketi oranı (0–1)
+- `label` — `normal` veya pencerede baskın saldırı türü
+
+`label` paket gerektirir; saldırı aralığındaki boş pencerede `normal` kalır, ama
+`saldiri_araliginda` 1 olur.
 
 > `src_ip`, `src_port`, `raw_hex` bu dosyada **bulunmaz**. `oznitelik.py` bunu
 > açıkça denetler ve bulursa hata verir.

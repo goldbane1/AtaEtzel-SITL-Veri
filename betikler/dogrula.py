@@ -9,6 +9,7 @@ Bir uçuş için şunları denetler ve Türkçe TAMAM/EKSİK raporlar:
   - meta.json var ve dolu mu
   - saldırılıysa: ground_truth.json var mı ve etiketlerle tutarlı mı
     (saldırı aralığında gerçekten saldırı etiketli paket var mı)
+  - pencereler çıkarıldıysa: uçuşun pencereleri kesintisiz ve süreyle uyumlu mu
 
 Kullanım:
     python betikler/dogrula.py --ucus F106_spoof_cmd
@@ -27,6 +28,31 @@ try:
     import pandas as pd
 except ImportError:
     pd = None
+
+
+PENCERE_NS = 1_000_000_000  # 1 saniye
+
+
+def pencere_sorunlari(pencereler: "pd.DataFrame", paketler: "pd.DataFrame") -> list[str]:
+    """Bir uçuşun pencerelerinin kesintisiz olup olmadığını denetler.
+
+    RS-TCN düzenli zaman serisi bekler: ilk paketten son pakete kadar her
+    saniye için tam bir pencere olmalıdır.
+    """
+    sorunlar: list[str] = []
+    baslangiclar = pencereler["window_start_ns"].astype("int64").sort_values()
+    farklar = baslangiclar.diff().dropna()
+    bozuk = int((farklar != PENCERE_NS).sum())
+    if bozuk:
+        sorunlar.append(f"pencereler kesintili ({bozuk} yerde adım 1 sn değil)")
+
+    t0 = int(paketler["t_ns"].min())
+    beklenen = (int(paketler["t_ns"].max()) - t0) // PENCERE_NS + 1
+    if len(pencereler) != beklenen:
+        sorunlar.append(f"pencere sayısı {len(pencereler)}, beklenen {beklenen}")
+    if int(baslangiclar.iloc[0]) != t0:
+        sorunlar.append("ilk pencere ilk paketle başlamıyor")
+    return sorunlar
 
 
 def bir_ucus_dogrula(ucus_id: str, cfg: dict) -> bool:
@@ -81,6 +107,16 @@ def bir_ucus_dogrula(ucus_id: str, cfg: dict) -> bool:
                     sorunlar.append(
                         f"'{tur}' saldırı aralığında etiketli paket yok"
                     )
+
+    # Pencereler (oznitelik.py çalıştırıldıysa)
+    pencere_yolu = ortak.repo_koku() / "veri" / "oznitelikler" / "pencereler.parquet"
+    if df is not None and not df.empty and pencere_yolu.exists():
+        pencereler = pd.read_parquet(pencere_yolu)
+        pencereler = pencereler[pencereler["flight_id"] == ucus_id]
+        if pencereler.empty:
+            ortak.log(f"{ucus_id}: pencereler.parquet'te yok, pencere kontrolü atlandı.", "UYARI")
+        else:
+            sorunlar.extend(pencere_sorunlari(pencereler, df))
 
     if sorunlar:
         ortak.log(f"{ucus_id}: EKSİK -> " + "; ".join(sorunlar), "HATA")

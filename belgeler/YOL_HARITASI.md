@@ -34,7 +34,7 @@ Kurallar:
 |-------|-------|------|
 | [x] | G0 | Gerçek SITL'de duman testi |
 | [x] | G1 | Komut–yanıt öznitelikleri |
-| [ ] | G2 | Boş pencereler |
+| [x] | G2 | Boş pencereler |
 | [ ] | G3 | Normal uçuşa meşru operatör komutları |
 | [ ] | G4 | Sahte telemetri yönü |
 | [ ] | G5 | Yazma performansı |
@@ -172,7 +172,7 @@ olaylar G2'ye kadar tabloya girmez; bu dört uçuşta kayıp olmadı.
 
 ## G2 — Boş pencereler
 
-- [ ] **Durum**
+- [x] **Durum**
 
 **Amaç:** `oznitelik.py` şu an yalnızca paket içeren pencereleri üretiyor. Hiç
 paket gelmeyen saniye, bir saldırının ya da bağlantı kopmasının izi olabilir ve
@@ -228,7 +228,12 @@ girdi olarak verilmez. `VERI_SEMASI.md`'ye bu şekilde yazılır.
 **Etkilenen dosyalar:** `betikler/oznitelik.py`, `betikler/dogrula.py`,
 `belgeler/VERI_SEMASI.md`, `tests/`
 
-**Sonuç:** —
+**Sonuç:** 2026-11-06 — Tamamlandı. `pytest` 95 test geçti. `pencereler.parquet` 90 sütun;
+4 test uçuşunda 750 pencere kesintisiz, boş değer yok, `dogrula.py` 4/4 TAMAM. `F103`'te
+(`compid` 190, tekrarlı) `gcs_sysid_seq_bozulma` saldırıda 1,64, dışında 0,008/pencere;
+`kritik_komut_sayisi` 1,82 ve 0,023. Normal uçuşta GCS'nin yeniden bağlanmasından gelen
+tek seq süreksizliği beklenen davranıştır. Yeni pencereler `--ucus` ile tek uçuş
+çalıştırılınca `pencereler.parquet`'in üzerine yazılır; toplu işlemde `--hepsi` kullanılır.
 
 ---
 

@@ -354,6 +354,7 @@ def test_oznitelik_ciktisinda_sutunlar_var(tmp_path):
 
     assert set(SUTUNLAR) <= set(sonuc.columns)
     assert list(sonuc.columns)[-2:] == ["attack_ratio", "label"]
+    assert sonuc.loc[2, "toplam_paket"] == 1
     assert sonuc.loc[0, "ack_eslesme_sayisi"] == 1
     assert sonuc.loc[0, "ack_gecikme_ort_ms"] == pytest.approx(100, abs=0.01)
     assert not {"src_ip", "src_port", "raw_hex"} & set(sonuc.columns)
