@@ -57,6 +57,16 @@ Etiketlemeden sonra `paketler.parquet`'e bir de `label` sütunu eklenir
 `flight_id`, `pc_id`, `ardupilot_version`, `vehicle` (ArduPlane), `mission_file`,
 `wind` (hız/yön), `location`, `date`, `operator`, `duration_s`, `notes`.
 
+`ucus_yap.py` uçuş sonunda şu alanları da yazar:
+
+| Alan | Açıklama |
+|------|----------|
+| `ucus_basarili` | Kalkış doğrulandıysa `true`, değilse `false` |
+| `basarisizlik_nedeni` | Başarısızlığın Türkçe nedeni; başarılı uçuşta `null` |
+| `kalkis_kontrolu` | `dogrulandi`, `armed_goruldu`, `auto_goruldu`, `maks_irtifa_m`, `waypoint_ilerlemesi`, `son_gorev_sirasi` |
+
+Kalkış doğrulaması için irtifa > 50 m ve AUTO modunda waypoint ilerlemesi gerekir.
+
 ## `ground_truth.json` (yalnızca saldırılı uçuşlar)
 
 Bir uçuşta birden fazla saldırı olabileceği için kayıtlar bir **liste** olarak

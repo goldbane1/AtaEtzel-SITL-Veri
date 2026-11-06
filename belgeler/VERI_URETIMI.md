@@ -55,6 +55,10 @@ bash betikler/saldiri_uret.sh F106_spoof_cmd gorevler/gorev1_dikdortgen.waypoint
 #                             <ucus_id>       <gorev>                               <saldiri> sure saldiri_sure gecikme
 ```
 
+`gecikme`, kalkış **doğrulandıktan sonra** sayılır (irtifa > 50 m ve AUTO'da waypoint
+ilerlemesi). Kalkış olmazsa saldırı hiç başlamaz ve betik hata koduyla çıkar. Her
+uçuştan önce SITL'yi yeniden başlatın: önceki uçuşun uçağı hâlâ havadadır.
+
 `replay` için kaynak uçuş gerekir:
 
 ```bash

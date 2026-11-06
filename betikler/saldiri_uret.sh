@@ -3,7 +3,7 @@
 # saldiri_uret.sh — Tek komutla bir SALDIRILI uçuş üretir.
 # ---------------------------------------------------------------------
 # Normal uçuşı tekrar uçururken, uçuşın ORTASINDA seçilen saldırıyı
-# çalıştırır. Böylece saldırıdan ÖNCE ve SONRA temiz (normal) bölümler
+# çalıştırır. Gecikme, kalkış DOĞRULANDIKTAN sonra sayılır. Böylece saldırıdan ÖNCE ve SONRA temiz (normal) bölümler
 # kalır; bu, etiketleme ve model eğitimi için önemlidir.
 #
 # SITL'nin AYRI bir terminalde çalıştığını varsayar.
@@ -58,20 +58,44 @@ PROXY_PID=$!
 sleep 3
 
 echo "[BILGI] 2/4 Uçuş başlatılıyor (arka planda): $GOREV, $SURE sn..."
-python betikler/ucus_yap.py --gorev "$GOREV" --ucus "$UCUS" --sure "$SURE" &
+# Saldırı kalkıştan sonra başlasın diye uçuş betiği bu dosyayı oluşturarak haber verir.
+KALKIS_ISARETI="$(mktemp -u)"
+python betikler/ucus_yap.py --gorev "$GOREV" --ucus "$UCUS" --sure "$SURE" \
+  --kalkis-isareti "$KALKIS_ISARETI" &
 UCUS_PID=$!
 
 temizle() {
+  local kod=$?
+  rm -f "$KALKIS_ISARETI"
   echo "[BILGI] 4/4 Temizlik: uçuş ve proxy kapatılıyor..."
-  kill -INT "$UCUS_PID" 2>/dev/null || true
+  # Arka plan işleri SIGINT'i yok sayar; uçuş betiği için SIGTERM kullanılır.
+  kill -TERM "$UCUS_PID" 2>/dev/null || true
   wait "$UCUS_PID" 2>/dev/null || true
   kill -INT "$PROXY_PID" 2>/dev/null || true
   wait "$PROXY_PID" 2>/dev/null || true
-  echo "[TAMAM] Saldırılı uçuş üretimi bitti: $UCUS ($SALDIRI)"
+  if [[ "$kod" -eq 0 ]]; then
+    echo "[TAMAM] Saldırılı uçuş üretimi bitti: $UCUS ($SALDIRI)"
+  else
+    echo "[HATA] Uçuş başarısız: $UCUS ($SALDIRI; nedeni meta.json'da, çıkış kodu $kod)"
+  fi
+  exit "$kod"
 }
 trap temizle EXIT
 
-echo "[BILGI] 3/4 $GECIKME sn sonra '$SALDIRI' saldırısı $SALDIRI_SURE sn çalışacak..."
+# Kalkış doğrulanana kadar bekle. Uçuş betiği biterse kalkış olmamıştır:
+# saldırı hiç başlatılmaz, uçuşun çıkış kodu aynen döndürülür.
+echo "[BILGI] Kalkış doğrulaması bekleniyor..."
+while [[ ! -e "$KALKIS_ISARETI" ]]; do
+  if ! kill -0 "$UCUS_PID" 2>/dev/null; then
+    UCUS_KODU=0
+    wait "$UCUS_PID" || UCUS_KODU=$?
+    echo "[HATA] Kalkış doğrulanmadan uçuş bitti; saldırı başlatılmadı."
+    exit "$(( UCUS_KODU == 0 ? 1 : UCUS_KODU ))"
+  fi
+  sleep 0.5
+done
+
+echo "[BILGI] 3/4 Kalkıştan $GECIKME sn sonra '$SALDIRI' saldırısı $SALDIRI_SURE sn çalışacak..."
 python "$SALDIRI_BETIK" \
   --ucus "$UCUS" \
   --sure "$SALDIRI_SURE" \
@@ -80,4 +104,7 @@ python "$SALDIRI_BETIK" \
 
 # Saldırı bittikten sonra uçuşın temiz kuyruk bölümü için kısa bekleme
 echo "[BILGI] Saldırı bitti; temiz kuyruk bölümü için uçuşın bitmesi bekleniyor..."
-wait "$UCUS_PID" 2>/dev/null || true
+# Uçuş başarısızsa çıkış kodu korunur (toplu üretim buna dayanır).
+UCUS_KODU=0
+wait "$UCUS_PID" || UCUS_KODU=$?
+exit "$UCUS_KODU"

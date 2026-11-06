@@ -41,8 +41,25 @@ Her sorun için **belirti → neden → çözüm** verilmiştir.
 ## Uçak AUTO'da kalkmıyor
 - **Neden:** Görevde NAV_TAKEOFF yok, arm olmadı ya da `MISSION_START` gitmedi.
 - **Çözüm:** Görev dosyasının ilk komutunun NAV_TAKEOFF (22) olduğundan emin olun.
-  `ucus_yap.py` arm + AUTO + `MISSION_START` gönderir; SITL konsolunda
-  "ARMED" ve "Mission" mesajlarını izleyin. Rüzgâr çok yüksekse düşürün.
+  `ucus_yap.py` GPS ve ön-arm kontrollerini bekler, sonra arm + AUTO +
+  `MISSION_START` gönderir ve ACK'leri denetler. Neden `meta.json`'daki
+  `basarisizlik_nedeni` alanında yazar. Rüzgâr çok yüksekse düşürün.
+
+## Uçuş başarısız sayıldı (`ucus_basarili: false`)
+- **Neden:** Kalkış 120 sn içinde doğrulanamadı: irtifa 50 m'yi geçmedi ya da AUTO'da
+  waypoint ilerlemedi. Betik 1 koduyla çıkar, saldırılı uçuşta saldırı hiç başlamaz.
+- **Çözüm:** `kalkis_kontrolu` alanlarına bakın; o uçuşu veri setine katmayın.
+
+## İkinci uçuş tuhaf davranıyor / uçak zaten havada
+- **Neden:** SITL açık kaldı; önceki uçuşun uçağı hâlâ uçuyor.
+- **Çözüm:** Her uçuştan önce SITL'yi yeniden başlatın. `sim_vehicle.py`'yi kapatmak
+  yetmeyebilir, `arduplane` ayrı bir `xterm` içinde çalışmaya devam edebilir. Portun
+  boşaldığını `ss -tln | grep 5760` ile doğrulayın.
+
+## Uçuşun ilk ~10 sn'sinde telemetri yok, sonra yığılarak geliyor
+- **Neden:** SITL'nin **ilk** açılışında görüldü, sonraki açılışta telemetri ~2 sn'de
+  başladı. Proxy sorunu değildir: uçuş boyunca en büyük boşluk 0,26 sn.
+- **Çözüm:** İşlem gerekmez.
 
 ## `paketler.parquet` boş
 - **Neden:** Proxy'ye hiç trafik gelmedi (GCS/uçuş proxy'ye değil doğrudan SITL'ye

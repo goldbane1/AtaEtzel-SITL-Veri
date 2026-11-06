@@ -46,10 +46,16 @@ PROXY_PID=$!
 sleep 3
 
 temizle() {
+  local kod=$?
   echo "[BILGI] 3/3 Proxy kapatılıyor (PID $PROXY_PID)..."
   kill -INT "$PROXY_PID" 2>/dev/null || true
   wait "$PROXY_PID" 2>/dev/null || true
-  echo "[TAMAM] Normal uçuş üretimi bitti: $UCUS"
+  if [[ "$kod" -eq 0 ]]; then
+    echo "[TAMAM] Normal uçuş üretimi bitti: $UCUS"
+  else
+    echo "[HATA] Uçuş başarısız: $UCUS (nedeni meta.json'da, çıkış kodu $kod)"
+  fi
+  exit "$kod"
 }
 trap temizle EXIT
 

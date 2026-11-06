@@ -32,7 +32,7 @@ Kurallar:
 
 | Durum | Görev | Konu |
 |-------|-------|------|
-| [ ] | G0 | Gerçek SITL'de duman testi |
+| [x] | G0 | Gerçek SITL'de duman testi |
 | [ ] | G1 | Komut–yanıt öznitelikleri |
 | [ ] | G2 | Boş pencereler |
 | [ ] | G3 | Normal uçuşa meşru operatör komutları |
@@ -61,7 +61,7 @@ verilmemişse asistan görevi yapmadan önce kullanıcıya sorar.
 
 ## G0 — Gerçek SITL'de duman testi
 
-- [ ] **Durum**
+- [x] **Durum**
 
 **Amaç:** Kod bugüne kadar gerçek SITL'de hiç çalışmadı. Üzerine öznitelik
 eklemeden önce uçağın gerçekten kalktığını ve verinin gerçekten aktığını görmemiz
@@ -105,7 +105,14 @@ setine sokar.
 `betikler/normal_uretim.sh`, `belgeler/SORUN_GIDERME.md`, `belgeler/VERI_SEMASI.md`
 (`meta.json` alanları), `tests/`
 
-**Sonuç:** —
+**Sonuç:** 2026-11-06 — Tamamlandı. `kontrol.py` 7/7, `pytest` 15 test geçti. Masaüstünde
+(`Plane-4.7.2`, `fb773567`) `F100_normal`: 24.502 paket, en yüksek irtifa 111,3 m.
+`F101_spoof_cmd`: 24.783 paket, en yüksek irtifa 110,8 m, 60 saldırı paketi etiketlendi;
+kalkış ~34. sn'de doğrulandı, saldırı 94. sn'de başladı. İkisine de `dogrula.py` TAMAM
+dedi. Düzeltilenler: GCS HEARTBEAT el sıkışması, telemetri isteği, GPS/ön-arm beklemesi,
+ACK denetimi, görev yükleme hatası, script çıkış kodları. Kalkış olmayan yol SITL'siz
+testle doğrulandı. Gerçek uçuşta gözlenen açık noktalar: görev 1 ~79. sn'de bitip RTL'ye
+geçiyor; `disarm` saldırısı uçuşta reddediliyor (ACK sonucu 4).
 
 ---
 
