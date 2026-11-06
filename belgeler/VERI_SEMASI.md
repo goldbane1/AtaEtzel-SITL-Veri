@@ -64,6 +64,13 @@ Etiketlemeden sonra `paketler.parquet`'e bir de `label` sütunu eklenir
 | `ucus_basarili` | Kalkış doğrulandıysa `true`, değilse `false` |
 | `basarisizlik_nedeni` | Başarısızlığın Türkçe nedeni; başarılı uçuşta `null` |
 | `kalkis_kontrolu` | `dogrulandi`, `armed_goruldu`, `auto_goruldu`, `maks_irtifa_m`, `waypoint_ilerlemesi`, `son_gorev_sirasi` |
+| `tohum` | Operatör planının tohumu |
+| `telemetri_hz` | İstenen telemetri akış hızı |
+| `irtifa_farki_m` | Görev irtifalarına uygulanan fark |
+| `operator_komutlari` | Gönderilen komutların listesi: `t_ns`, `komut`, `parametre`, `ack` |
+
+`ack` şunlardan biridir: `COMMAND_ACK` sonucu (0 = kabul), `param_value`,
+`mission_current` ya da yanıt 3 sn'de gelmediyse `zaman_asimi`.
 
 Kalkış doğrulaması için irtifa > 50 m ve AUTO modunda waypoint ilerlemesi gerekir.
 

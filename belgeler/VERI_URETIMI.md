@@ -79,15 +79,33 @@ python betikler/dogrula.py --hepsi       # hepsi TAMAM olmalı
 
 ## Önerilen uçuş listesi (en az 5 + 5)
 
-**Normal (5)** — farklı görev/rüzgâr/irtifa; biri operatör komutlu:
+**Normal (5)** — farklı görev/rüzgâr/irtifa:
 
 | Uçuş | Görev | Rüzgâr | Not |
 |------|-------|--------|-----|
-| `F101_normal` | gorev1_dikdortgen | 3 m/s @ 90° | temel |
-| `F102_normal` | gorev2_uzunhat | 0 | rüzgârsız |
-| `F103_normal` | gorev3_loiter | 5 m/s @ 180° | yüksek irtifa |
-| `F104_normal` | gorev4_karisik | 4 m/s @ 45° | mod değişimli |
+| `F101_normal` | gorev1_dikdortgen | 3 m/s @ 90° | dikdörtgen tur |
+| `F102_normal` | gorev2_uzunhat | 0 | rüzgârsız, uzun bacak |
+| `F103_normal` | gorev3_loiter | 5 m/s @ 180° | yüksek irtifa, görev içi loiter |
+| `F104_normal` | gorev4_karisik | 4 m/s @ 45° | görev içi loiter ve iniş |
 | `F105_normal` | gorev5_farkli | 6 m/s @ 270° | farklı yön |
+
+Görevler `DO_JUMP` ile tekrar eder, kalkıştan sonra en az 300 sn AUTO'da kalır.
+
+**Operatör komutları** her uçuşta varsayılan olarak açıktır; saldırılı uçuşlarda da.
+Kalkış doğrulandıktan sonra, son 20 sn hariç, ortalama 20–40 sn'de bir rastgele:
+AUTO → LOITER → AUTO, `DO_CHANGE_SPEED`, zararsız parametre okuma, `MISSION_SET_CURRENT`
+ve mesaj hızı değişimi gönderilir; ayrıca periyodik durum sorguları yapılır. Bu sayede
+model "komut = saldırı" diye ezberlemez. Sonuçlar `meta.json`'daki `operator_komutlari`
+listesine yazılır. Aynı `--tohum` aynı planı üretir.
+
+Betiklerde `ucus_yap.py`'ye ek ayar `UCUS_EK_ARG` ortam değişkeniyle verilir:
+
+```bash
+UCUS_EK_ARG="--tohum 42 --telemetri-hz 8 --irtifa-farki-m 30" \
+  bash betikler/normal_uretim.sh F104_normal gorevler/gorev4_karisik.waypoints 300 4 45
+```
+
+`--no-operator-komut` operatör komutlarını kapatır. Veri üretiminde kapatmayın.
 
 **Saldırılı (5)** — her saldırı bir uçuş:
 

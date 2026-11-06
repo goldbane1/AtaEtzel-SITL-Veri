@@ -14,7 +14,9 @@ Adımlar:
   5. Arm et, AUTO moduna al, kalkışı başlat (her komutun ACK'i beklenir).
   6. --sure saniye boyunca uçur; bu sırada kalkışı doğrula: irtifa > 50 m ve
      AUTO modunda waypoint ilerlemesi (HEARTBEAT, GLOBAL_POSITION_INT).
-  7. Sonucu meta.json'a yaz. Kalkış doğrulanamazsa uçuş BAŞARISIZ sayılır ve
+  7. Kalkıştan sonra meşru operatör komutları gönder (--operator-komut). Normal
+     uçuşlarda komut olmazsa model "komut = saldırı" diye ezberler.
+  8. Sonucu meta.json'a yaz. Kalkış doğrulanamazsa uçuş BAŞARISIZ sayılır ve
      betik 1 koduyla çıkar.
 
 ÖNEMLİ: --speedup KULLANILMAZ. Simülasyonu hızlandırmak paketler arası
@@ -23,13 +25,14 @@ dayandığı için SIM hızı 1 kalmalıdır.
 
 Kullanım:
     python betikler/ucus_yap.py --gorev gorevler/gorev1_dikdortgen.waypoints \
-        --ucus F101_normal --sure 180 --ruzgar-hiz 3 --ruzgar-yon 90
+        --ucus F101_normal --sure 180 --ruzgar-hiz 3 --ruzgar-yon 90 --tohum 42
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import random
 import sys
 import time
 from pathlib import Path
@@ -47,7 +50,27 @@ except ImportError:
 KALKIS_IRTIFA_ESIGI_M = 50.0
 KALKIS_ZAMAN_ASIMI_S = 120.0     # kalkıştan sonra doğrulama için tanınan süre
 HAZIR_ZAMAN_ASIMI_S = 180.0      # GPS/EKF hazır olması için tanınan süre
-TELEMETRI_HIZI_HZ = 4            # istenen telemetri akış hızı
+TELEMETRI_HIZI_HZ = 4            # varsayılan telemetri akış hızı
+
+# Operatör komutları
+OPERATOR_ARALIK_S = (20.0, 40.0)   # iki komut arası süre (ortalama 30 sn)
+OPERATOR_SON_BOSLUK_S = 20.0       # uçuşun son 20 sn'sine komut konmaz
+LOITER_SURE_S = (5.0, 12.0)        # AUTO -> LOITER -> AUTO döngüsünde LOITER süresi
+DURUM_ARALIK_S = (12.0, 18.0)      # zararsız durum sorguları arası süre
+ACK_ZAMAN_ASIMI_S = 3.0
+OPERATOR_ISLEMLERI = ("mod_dongusu", "hiz_degistir", "param_oku",
+                      "gorev_sirasi", "mesaj_hizi")
+OKUNACAK_PARAMLAR = ("WP_RADIUS", "WP_LOITER_RAD", "RTL_RADIUS", "RTL_ALTITUDE")
+HIZI_DEGISEN_MESAJLAR = (30, 74, 65)     # ATTITUDE, VFR_HUD, RC_CHANNELS
+SORGULANAN_MESAJLAR = (148, 242)         # AUTOPILOT_VERSION, HOME_POSITION
+MAV_CMD_DO_CHANGE_SPEED = 178
+MAV_CMD_SET_MESSAGE_INTERVAL = 511
+MAV_CMD_REQUEST_MESSAGE = 512
+
+# Görev irtifası
+IRTIFALI_KOMUTLAR = {16, 18, 19, 22}     # WAYPOINT, LOITER_TURNS, LOITER_TIME, TAKEOFF
+GORICELI_CERCEVE = 3                     # MAV_FRAME_GLOBAL_RELATIVE_ALT
+EN_DUSUK_GOREV_IRTIFASI_M = 60.0         # kalkış eşiği 50 m'nin altına inilmez
 
 # MAVLink sabitleri (pymavlink olmadan da test edilebilsin diye burada)
 PLANE_AUTO_MODU = 10             # ArduPlane custom_mode: AUTO
@@ -128,9 +151,141 @@ class KalkisIzleyici:
         }
 
 
+def operator_plani(tohum: int, baslangic_s: float, bitis_s: float,
+                   gorev_siralari: list[int]) -> list[dict]:
+    """Meşru operatör komutlarının zaman planını üretir.
+
+    Aynı girdiler aynı planı verir, böylece uçuş tekrar üretilebilir. Zamanlar
+    uçuş başlangıcından itibaren saniyedir. tur: "ana" asıl operatör komutu,
+    "donus" LOITER'dan AUTO'ya dönüş, "durum" zararsız durum sorgusudur.
+    """
+    rng = random.Random(tohum)
+    plan: list[dict] = []
+    t = baslangic_s
+    while True:
+        t += rng.uniform(*OPERATOR_ARALIK_S)
+        if t >= bitis_s:
+            break
+        islem = rng.choice(OPERATOR_ISLEMLERI)
+        loiter_s = rng.uniform(*LOITER_SURE_S)
+        if islem == "gorev_sirasi" and not gorev_siralari:
+            islem = "param_oku"
+        if islem == "mod_dongusu" and t + loiter_s >= bitis_s:
+            islem = "param_oku"
+
+        if islem == "mod_dongusu":
+            plan.append({"t_s": t, "komut": "mod", "parametre": "LOITER", "tur": "ana"})
+            plan.append({"t_s": t + loiter_s, "komut": "mod", "parametre": "AUTO",
+                         "tur": "donus"})
+        elif islem == "hiz_degistir":
+            plan.append({"t_s": t, "komut": "hiz_degistir",
+                         "parametre": round(rng.uniform(18.0, 28.0), 1), "tur": "ana"})
+        elif islem == "param_oku":
+            plan.append({"t_s": t, "komut": "param_oku",
+                         "parametre": rng.choice(OKUNACAK_PARAMLAR), "tur": "ana"})
+        elif islem == "gorev_sirasi":
+            plan.append({"t_s": t, "komut": "gorev_sirasi",
+                         "parametre": rng.choice(gorev_siralari), "tur": "ana"})
+        else:
+            plan.append({"t_s": t, "komut": "mesaj_hizi", "tur": "ana",
+                         "parametre": [rng.choice(HIZI_DEGISEN_MESAJLAR),
+                                       rng.choice((2, 4, 10))]})
+
+    # Durum sorguları ayrı bir sayı akışından gelir, ana komutları etkilemez.
+    rng_durum = random.Random(tohum + 1)
+    t = baslangic_s
+    while True:
+        t += rng_durum.uniform(*DURUM_ARALIK_S)
+        if t >= bitis_s:
+            break
+        plan.append({"t_s": t, "komut": "durum_sorgusu",
+                     "parametre": rng_durum.choice(SORGULANAN_MESAJLAR), "tur": "durum"})
+    return sorted(plan, key=lambda adim: adim["t_s"])
+
+
+class OperatorYurutucu:
+    """Plandaki komutları zamanı gelince gönderir, yanıtları bekletmeden izler.
+
+    Ana döngüyü durdurmaz: Kalkış izleme ve HEARTBEAT akışı sürer. Her kaydın
+    ack alanı dolar: yanıt ya da "zaman_asimi".
+    """
+
+    def __init__(self, baglanti, plan: list[dict]) -> None:
+        self.baglanti = baglanti
+        self.plan = list(plan)
+        self.kayitlar: list[dict] = []
+        self.bekleyenler: list[dict] = []
+
+    def _komut(self, komut: int, *parametreler: float) -> None:
+        degerler = (list(parametreler) + [0.0] * 7)[:7]
+        self.baglanti.mav.command_long_send(
+            self.baglanti.target_system, self.baglanti.target_component,
+            komut, 0, *degerler,
+        )
+
+    def gonder(self, adim: dict) -> None:
+        komut, parametre = adim["komut"], adim["parametre"]
+        kayit = {"t_ns": ortak.simdi_ns(), "komut": komut, "parametre": parametre,
+                 "ack": None}
+        if komut == "mod":
+            self.baglanti.set_mode(self.baglanti.mode_mapping()[parametre])
+            beklenen = ("COMMAND_ACK", 176)
+        elif komut == "hiz_degistir":
+            self._komut(MAV_CMD_DO_CHANGE_SPEED, 0, parametre, -1)
+            beklenen = ("COMMAND_ACK", MAV_CMD_DO_CHANGE_SPEED)
+        elif komut == "param_oku":
+            self.baglanti.mav.param_request_read_send(
+                self.baglanti.target_system, self.baglanti.target_component,
+                parametre.encode("ascii"), -1,
+            )
+            beklenen = ("PARAM_VALUE", parametre)
+        elif komut == "gorev_sirasi":
+            self.baglanti.mav.mission_set_current_send(
+                self.baglanti.target_system, self.baglanti.target_component, parametre,
+            )
+            beklenen = ("MISSION_CURRENT", parametre)
+        elif komut == "mesaj_hizi":
+            mesaj_no, hz = parametre
+            self._komut(MAV_CMD_SET_MESSAGE_INTERVAL, mesaj_no, 1_000_000 / hz)
+            beklenen = ("COMMAND_ACK", MAV_CMD_SET_MESSAGE_INTERVAL)
+        else:  # durum_sorgusu
+            self._komut(MAV_CMD_REQUEST_MESSAGE, parametre)
+            beklenen = ("COMMAND_ACK", MAV_CMD_REQUEST_MESSAGE)
+        self.kayitlar.append(kayit)
+        self.bekleyenler.append({"kayit": kayit, "beklenen": beklenen,
+                                 "son": time.time() + ACK_ZAMAN_ASIMI_S})
+
+    def zamani_gelenleri_gonder(self, gecen_s: float) -> None:
+        while self.plan and self.plan[0]["t_s"] <= gecen_s:
+            self.gonder(self.plan.pop(0))
+
+    def mesaj_isle(self, msg) -> None:
+        tur = msg.get_type()
+        if tur == "COMMAND_ACK":
+            anahtar, sonuc = int(msg.command), int(msg.result)
+        elif tur == "PARAM_VALUE":
+            anahtar, sonuc = str(msg.param_id).rstrip("\x00"), "param_value"
+        elif tur == "MISSION_CURRENT":
+            anahtar, sonuc = int(msg.seq), "mission_current"
+        else:
+            return
+        for bekleyen in self.bekleyenler:
+            if bekleyen["beklenen"] == (tur, anahtar):
+                bekleyen["kayit"]["ack"] = sonuc
+                self.bekleyenler.remove(bekleyen)
+                return
+
+    def zaman_asimlarini_isle(self, hepsi: bool = False) -> None:
+        simdi = time.time()
+        for bekleyen in list(self.bekleyenler):
+            if hepsi or simdi > bekleyen["son"]:
+                bekleyen["kayit"]["ack"] = "zaman_asimi"
+                self.bekleyenler.remove(bekleyen)
+
+
 def ucus_sonucu_yaz(ucus_id: str, cfg: dict, kalkis: dict,
-                    neden: str | None) -> None:
-    """Uçuşun başarılı/başarısız sonucunu meta.json'a işler."""
+                    neden: str | None, ek: dict | None = None) -> None:
+    """Uçuşun başarılı/başarısız sonucunu ve ek alanları meta.json'a işler."""
     yol = ortak.ucus_klasoru(ucus_id, cfg) / "meta.json"
     meta = {}
     if yol.exists():
@@ -142,6 +297,7 @@ def ucus_sonucu_yaz(ucus_id: str, cfg: dict, kalkis: dict,
     meta["ucus_basarili"] = neden is None
     meta["basarisizlik_nedeni"] = neden
     meta["kalkis_kontrolu"] = kalkis
+    meta.update(ek or {})
     yol.parent.mkdir(parents=True, exist_ok=True)
     yol.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
 
@@ -168,7 +324,30 @@ def proxy_calisiyor_mu(host: str, udp_port: int) -> bool:
         return False
 
 
-def gorev_yukle(baglanti, gorev_yolu: Path) -> int:
+def irtifa_uygula(sira: int, komut: int, cerceve: int, irtifa_m: float,
+                  fark_m: float) -> float:
+    """Görev noktasının irtifasına farkı uygular, yeni irtifayı döndürür.
+
+    Ev konumu (sıra 0), iniş ve RTL gibi irtifasız öğeler değişmez. Sonuç
+    kalkış eşiğinin altına inmez.
+    """
+    if sira == 0 or komut not in IRTIFALI_KOMUTLAR or cerceve != GORICELI_CERCEVE:
+        return irtifa_m
+    return max(irtifa_m + fark_m, EN_DUSUK_GOREV_IRTIFASI_M)
+
+
+def gorev_siralari(gorev_yolu: Path) -> list[int]:
+    """Operatörün güvenle atlayabileceği görev noktaları (kalkış ve iniş hariç)."""
+    siralar = []
+    for satir in gorev_yolu.read_text(encoding="utf-8").splitlines()[1:]:
+        alanlar = satir.split("\t")
+        if len(alanlar) >= 12 and int(alanlar[0]) >= ILK_GOREV_SIRASI \
+                and int(alanlar[3]) in IRTIFALI_KOMUTLAR:
+            siralar.append(int(alanlar[0]))
+    return siralar
+
+
+def gorev_yukle(baglanti, gorev_yolu: Path, irtifa_farki_m: float = 0.0) -> int:
     """.waypoints dosyasını SITL'ye yükler.
 
     Yüklenen nokta sayısını döndürür; yükleme başarısızsa 0 döndürür.
@@ -179,6 +358,9 @@ def gorev_yukle(baglanti, gorev_yolu: Path) -> int:
     )
     sayi = wp.load(str(gorev_yolu))
     ortak.log(f"Görev okundu: {gorev_yolu.name} ({sayi} nokta).", "BILGI")
+    for i in range(wp.count()):
+        nokta = wp.wp(i)
+        nokta.z = irtifa_uygula(i, nokta.command, nokta.frame, nokta.z, irtifa_farki_m)
 
     baglanti.waypoint_clear_all_send()
     baglanti.waypoint_count_send(wp.count())
@@ -198,11 +380,11 @@ def gorev_yukle(baglanti, gorev_yolu: Path) -> int:
     return wp.count()
 
 
-def telemetri_iste(baglanti) -> None:
+def telemetri_iste(baglanti, hz: int = TELEMETRI_HIZI_HZ) -> None:
     """SITL'den telemetri akışını ister; yoksa konum mesajları gelmeyebilir."""
     baglanti.mav.request_data_stream_send(
         baglanti.target_system, baglanti.target_component,
-        mavutil.mavlink.MAV_DATA_STREAM_ALL, TELEMETRI_HIZI_HZ, 1,
+        mavutil.mavlink.MAV_DATA_STREAM_ALL, hz, 1,
     )
 
 
@@ -319,6 +501,16 @@ def main() -> int:
         help="Kalkış bu kadar saniyede doğrulanmazsa uçuş başarısız sayılır.",
     )
     ap.add_argument(
+        "--operator-komut", action=argparse.BooleanOptionalAction, default=True,
+        help="Meşru operatör komutları gönder (kapatmak: --no-operator-komut).",
+    )
+    ap.add_argument("--tohum", type=int,
+                    help="Operatör planının tohumu (yoksa rastgele seçilir, meta'ya yazılır).")
+    ap.add_argument("--telemetri-hz", type=int, default=TELEMETRI_HIZI_HZ,
+                    help="Telemetri akış hızı (Hz).")
+    ap.add_argument("--irtifa-farki-m", type=float, default=0.0,
+                    help="Görev irtifalarına eklenecek fark (metre).")
+    ap.add_argument(
         "--kalkis-isareti",
         help="Kalkış doğrulanınca oluşturulacak dosya (saldırı betiği bunu bekler).",
     )
@@ -360,14 +552,27 @@ def main() -> int:
     )
     meta_guncelle(ucus_id, cfg, gorev_yolu.name, args.ruzgar_hiz, args.ruzgar_yon)
     izleyici = KalkisIzleyici()
+    tohum = args.tohum if args.tohum is not None else random.SystemRandom().randrange(2**31)
+    operator: OperatorYurutucu | None = None
+
+    def ek_alanlar() -> dict:
+        kayitlar = operator.kayitlar if operator else []
+        return {
+            "tohum": tohum,
+            "telemetri_hz": args.telemetri_hz,
+            "irtifa_farki_m": args.irtifa_farki_m,
+            "operator_komutlari": kayitlar,
+        }
 
     def basarisiz(neden: str) -> int:
         ortak.log(f"UÇUŞ BAŞARISIZ: {neden}", "HATA")
-        ucus_sonucu_yaz(ucus_id, cfg, izleyici.sonuc(), neden)
+        if operator:
+            operator.zaman_asimlarini_isle(hepsi=True)
+        ucus_sonucu_yaz(ucus_id, cfg, izleyici.sonuc(), neden, ek_alanlar())
         baglanti.close()
         return 1
 
-    telemetri_iste(baglanti)
+    telemetri_iste(baglanti, args.telemetri_hz)
 
     # Rüzgâr
     if args.ruzgar_hiz or args.ruzgar_yon:
@@ -375,7 +580,7 @@ def main() -> int:
         param_ayarla(baglanti, "SIM_WIND_DIR", args.ruzgar_yon)
 
     # Görev
-    if gorev_yukle(baglanti, gorev_yolu) == 0:
+    if gorev_yukle(baglanti, gorev_yolu, args.irtifa_farki_m) == 0:
         return basarisiz("görev yüklenemedi")
 
     if not hazir_bekle(baglanti):
@@ -410,6 +615,18 @@ def main() -> int:
                 )
                 if args.kalkis_isareti:
                     Path(args.kalkis_isareti).touch()
+                if args.operator_komut:
+                    plan = operator_plani(
+                        tohum, time.time() - baslangic,
+                        args.sure - OPERATOR_SON_BOSLUK_S, gorev_siralari(gorev_yolu),
+                    )
+                    operator = OperatorYurutucu(baglanti, plan)
+                    ortak.log(f"Operatör planı hazır: {len(plan)} adım (tohum {tohum}).", "BILGI")
+            if operator:
+                operator.mesaj_isle(msg)
+        if operator:
+            operator.zamani_gelenleri_gonder(time.time() - baslangic)
+            operator.zaman_asimlarini_isle()
         if (not izleyici.dogrulandi
                 and time.time() - baslangic > args.kalkis_zaman_asimi):
             return basarisiz(f"kalkış doğrulanamadı: {izleyici.neden()}")
@@ -417,7 +634,9 @@ def main() -> int:
     if not izleyici.dogrulandi:
         return basarisiz(f"kalkış doğrulanamadı: {izleyici.neden()}")
 
-    ucus_sonucu_yaz(ucus_id, cfg, izleyici.sonuc(), None)
+    if operator:
+        operator.zaman_asimlarini_isle(hepsi=True)
+    ucus_sonucu_yaz(ucus_id, cfg, izleyici.sonuc(), None, ek_alanlar())
     ortak.log("Süre doldu. Uçuş tamamlandı.", "TAMAM")
     print("")
     ortak.log(

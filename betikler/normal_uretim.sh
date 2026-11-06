@@ -10,6 +10,9 @@
 #   bash betikler/normal_uretim.sh <ucus_id> <gorev_dosyasi> [sure] [ruzgar_hiz] [ruzgar_yon]
 # Örnek:
 #   bash betikler/normal_uretim.sh F101_normal gorevler/gorev1_dikdortgen.waypoints 180 3 90
+#
+# ucus_yap.py'ye ek argüman: UCUS_EK_ARG ortam değişkeni, örn.
+#   UCUS_EK_ARG="--tohum 42 --telemetri-hz 8" bash betikler/normal_uretim.sh ...
 # =====================================================================
 set -euo pipefail
 
@@ -65,4 +68,5 @@ python betikler/ucus_yap.py \
   --ucus "$UCUS" \
   --sure "$SURE" \
   --ruzgar-hiz "$RUZGAR_HIZ" \
-  --ruzgar-yon "$RUZGAR_YON"
+  --ruzgar-yon "$RUZGAR_YON" \
+  ${UCUS_EK_ARG:-}

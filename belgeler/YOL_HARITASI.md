@@ -35,7 +35,7 @@ Kurallar:
 | [x] | G0 | Gerçek SITL'de duman testi |
 | [x] | G1 | Komut–yanıt öznitelikleri |
 | [x] | G2 | Boş pencereler |
-| [ ] | G3 | Normal uçuşa meşru operatör komutları |
+| [x] | G3 | Normal uçuşa meşru operatör komutları |
 | [ ] | G4 | Sahte telemetri yönü |
 | [ ] | G5 | Yazma performansı |
 | [ ] | G6 | Kanal bozulması |
@@ -239,7 +239,7 @@ tek seq süreksizliği beklenen davranıştır. Yeni pencereler `--ucus` ile tek
 
 ## G3 — Normal uçuşa meşru operatör komutları
 
-- [ ] **Durum**
+- [x] **Durum**
 
 **Amaç:** Normal uçuşlarda neredeyse hiç komut yoksa model "komut = saldırı"
 ezberler. Meşru operatör trafiği olmalı ki model komutun varlığını değil,
@@ -292,7 +292,23 @@ tutarsızlığını öğrensin.
 `betikler/saldiri_uret.sh`, `gorevler/*.waypoints`, `belgeler/VERI_URETIMI.md`,
 `belgeler/VERI_SEMASI.md` (`meta.json` alanları), `tests/`
 
-**Sonuç:** —
+**Sonuç:** 2026-11-06 — Tamamlandı. `pytest` geçti. 5 görevin hepsi gerçek SITL'de (345 sn,
+operatör komutları açık) ölçüldü: AUTO'ya geçişten sonra 340 sn içinde hiçbiri görev sonuna
+ulaşmadı, yani en az 300 sn şartı sağlandı.
+
+| Uçuş | Görev | Rüzgâr | Hz | İrtifa farkı | Maks. irtifa | Operatör komutu |
+|------|-------|--------|----|--------------|--------------|-----------------|
+| `F104` | gorev1 | 3 | 4 | 0 | 110,8 | 32 |
+| `F105` | gorev2 | 0 | 2 | +20 | 150,8 | 33 |
+| `F106` | gorev3 | 5 | 8 | +50 | 210,7 | 31 |
+| `F107` | gorev4 | 4 | 4 | −30 | 103,6 | 35 |
+| `F108` | gorev5 | 6 | 8 | 0 | 140,9 | 31 |
+
+Beş uçuşta `yanitsiz_komut`, `eslesmeyen_ack`, `ack_red`, `gorev_protokol_ihlali`,
+`param_yanitsiz` ve `mod_tutarsiz` sıfır; tüm paketler `label = normal`. 3 `zaman_asimi`
+kaydı `ALT_HOLD_RTL` parametresinin Plane-4.7.2'de olmamasındandı; `RTL_ALTITUDE` ile
+düzeltildi, parametre adları kaynakla karşılaştıran test eklendi. Bu düzeltme uçuşla
+yeniden denenmedi; G4 uçuşunda görülecek.
 
 ---
 

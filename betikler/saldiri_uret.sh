@@ -15,6 +15,9 @@
 # Örnek (replay, kaynak uçuş ek argümanı):
 #   bash betikler/saldiri_uret.sh F208_replay gorevler/gorev2_uzunhat.waypoints replay 180 30 60 --kaynak-ucus F101_normal
 #
+# ucus_yap.py'ye ek argüman: UCUS_EK_ARG ortam değişkeni, örn.
+#   UCUS_EK_ARG="--tohum 42 --ruzgar-hiz 3" bash betikler/saldiri_uret.sh ...
+#
 # Geçerli saldırılar: spoof_cmd impersonation replay flood fake_telemetry
 # =====================================================================
 set -euo pipefail
@@ -61,7 +64,7 @@ echo "[BILGI] 2/4 Uçuş başlatılıyor (arka planda): $GOREV, $SURE sn..."
 # Saldırı kalkıştan sonra başlasın diye uçuş betiği bu dosyayı oluşturarak haber verir.
 KALKIS_ISARETI="$(mktemp -u)"
 python betikler/ucus_yap.py --gorev "$GOREV" --ucus "$UCUS" --sure "$SURE" \
-  --kalkis-isareti "$KALKIS_ISARETI" &
+  --kalkis-isareti "$KALKIS_ISARETI" ${UCUS_EK_ARG:-} &
 UCUS_PID=$!
 
 temizle() {
