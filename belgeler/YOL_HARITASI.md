@@ -40,7 +40,7 @@ Kurallar:
 | [x] | G5 | Yazma performansı |
 | [x] | G6 | Kanal bozulması |
 | [x] | G6.5 | Toplu üretim |
-| [ ] | G6.6 | Değerlendirme bölmeleri |
+| [x] | G6.6 | Değerlendirme bölmeleri |
 | [ ] | G7 | Uçtan uca doğrulama |
 | [ ] | G8 | Tam veri seti üretimi |
 
@@ -589,7 +589,7 @@ saldırı paketleri `normal` etiketleniyordu (etikette 1 sn pay). K3 hâlâ aç�
 
 ## G6.6 — Değerlendirme bölmeleri
 
-- [ ] **Durum**
+- [x] **Durum**
 
 **Amaç:** `bol.py` yalnızca saldırı türüne göre katmanlı tek bölme üretiyor.
 Değerlendirme protokolünün T2, T3 ve T4 senaryoları için kanal profiline duyarlı
@@ -622,9 +622,14 @@ dosyaları kullanır.
 - Yetersiz uçuş olduğunda Türkçe uyarı veriliyor.
 - Aynı tohum aynı bölmeleri üretiyor.
 
-**Etkilenen dosyalar:** `betikler/bol.py`, `belgeler/VERI_SEMASI.md`, `tests/`
+**Etkilenen dosyalar:** `betikler/bol.py`, `belgeler/VERI_SEMASI.md`, `.gitignore`, `tests/`
 
-**Sonuç:** —
+**Sonuç:** 2026-11-06 — Tamamlandı. `pytest` 335 test geçti. `veri/bolmeler/` altına `T1`, `T2`, `T3` ve
+beş `T4_<tür>` dosyası üretiliyor. Bir uçuş tek kümede; T3'te `agir` eğitim ve doğrulamada yok,
+T4'te çıkarılan tür yalnızca testte; aynı tohum aynı bölmeyi veriyor. Gerçek 23 test uçuşunda
+çalıştı; az uçuş olduğu için katman ve boş T2 test kümesi uyarıları beklenen davranıştır,
+gerçek bölmeler G8'de üretilir. `bolme.csv` ve `bolmeler/` makineye özgü çıktı olduğu için git
+dışında tutuldu.
 
 ---
 

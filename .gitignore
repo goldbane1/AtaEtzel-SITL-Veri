@@ -228,6 +228,8 @@ __marimo__/
 # Üretilen ham/işlenmiş uçuş verileri
 veri/ucuslar/
 veri/oznitelikler/
+veri/bolme.csv
+veri/bolmeler/
 
 # Veri dosyası türleri (her yerde dışlanır)
 *.parquet

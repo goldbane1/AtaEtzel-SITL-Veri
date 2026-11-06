@@ -20,7 +20,8 @@ veri/
       paketler.parquet
       meta.json
       ground_truth.json       # yalnızca saldırılı uçuşlarda
-  bolme.csv                   # flight_id, split
+  bolme.csv                   # flight_id, split (ana bölme)
+  bolmeler/                   # değerlendirme senaryoları (T1, T2, T3, T4_<tür>)
   oznitelikler/
     pencereler.parquet        # tüm uçuşların 1 sn'lik öznitelikleri
   ornek/                      # git'e giren çok küçük örnek (istisna)
@@ -63,8 +64,9 @@ Etiketlemeden sonra `paketler.parquet`'e bir de `label` sütunu eklenir
 |------|----------|
 | `ucus_basarili` | Kalkış doğrulandıysa `true`, değilse `false` |
 | `basarisizlik_nedeni` | Başarısızlığın Türkçe nedeni; başarılı uçuşta `null` |
-| `kalkis_kontrolu` | `dogrulandi`, `armed_goruldu`, `auto_goruldu`, `maks_irtifa_m`, `waypoint_ilerlemesi`, `son_gorev_sirasi` |
+| `kalkis_kontrolu` | `dogrulandi`, `armed_goruldu`, `auto_goruldu`, `maks_irtifa_m`, `waypoint_ilerlemesi`, `son_gorev_sirasi`, `dogrulama_t_ns` |
 | `kanal` | `profil`, `gecikme_ms`, `jitter_ms`, `kayip_yuzde`, `tohum` ve yön başına `olculen`: `gelen`, `dusen`, `gonderilen`, `olculen_kayip_yuzde`, `olculen_gecikme_ms` (`kayit_proxy.py` yazar) |
+| `toplu_plan` | Toplu üretimde uçuşun tam planı: `ana_tohum`, `ucus_tohumu`, `kanal_tohumu` ve seçilen tüm parametreler |
 | `tohum` | Operatör planının tohumu |
 | `telemetri_hz` | İstenen telemetri akış hızı |
 | `irtifa_farki_m` | Görev irtifalarına uygulanan fark |
@@ -113,6 +115,20 @@ gördüğüne göre yazılır; telsizden gelen her paket `gcs2uav`'dir.
 
 `fake_telemetry` paketleri uçağın kendi sysid'iyle gönderilir. `dogrula.py` yön ve
 sysid'i denetler. Varsayım ve sınırlılık için: [MIMARI.md](MIMARI.md).
+
+## Değerlendirme bölmeleri
+
+`bol.py`, `veri/bolme.csv`'nin yanında `veri/bolmeler/` altına senaryo dosyaları yazar. Sütunlar
+aynıdır: `flight_id`, `split`. Dosyada olmayan uçuş o senaryoda kullanılmaz. Bir uçuş tek kümede
+kalır; örnek düzeyinde bölme yapılmaz. Tüm yöntemler aynı dosyaları kullanır, RS-TCN eğitimde
+yalnızca normal uçuşları seçer. T5 dış veri setidir, burada üretilmez.
+
+| Dosya | Eğitim ve doğrulama | Test |
+|-------|---------------------|------|
+| `T1.csv` | `agir` hariç | Yalnızca `temiz` |
+| `T2.csv` | `agir` hariç | `hafif` ve `orta` |
+| `T3.csv` | `agir` hariç | Tüm `agir` uçuşları (eğitim aralığı dışı) |
+| `T4_<tür>.csv` | `agir` ve o saldırı türü hariç | Test uçuşları ve o türün tüm uçuşları |
 
 ## `pencereler.parquet` (1 sn'lik öznitelikler)
 
