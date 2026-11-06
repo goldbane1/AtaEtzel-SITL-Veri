@@ -131,6 +131,7 @@ betikler/           Python kodları
   saldiri_uret.sh   Tek komutla saldırılı uçuş
   etiketle.py       Paketleri ground_truth'a göre etiketler
   oznitelik.py      1 sn'lik öznitelik pencereleri çıkarır
+  komut_yanit.py    Komut–yanıt tutarlılığı öznitelikleri
   bol.py            egitim/dogrulama/test bölmesi (veri/bolme.csv)
   dogrula.py        Uçuş klasörü eksiksizlik/tutarlılık kontrolü
   saldirilar/       5 saldırı betiği (hepsi yalnızca localhost)
@@ -148,6 +149,7 @@ setup.sh            Baştan sona kurulum
 | `ucus_yap.py` | Görev yükler, arm/AUTO/kalkış yapar, uçurur |
 | `etiketle.py` | Her pakete `label` ekler (normal / saldırı türü) |
 | `oznitelik.py` | 1 sn pencere öznitelikleri → `pencereler.parquet` |
+| `komut_yanit.py` | İki yönlü komut–yanıt tutarlılığı (`oznitelik.py` çağırır) |
 | `bol.py` | Uçuş düzeyinde katmanlı bölme |
 | `dogrula.py` | Her uçuş için TAMAM/EKSİK raporu |
 

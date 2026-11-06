@@ -33,7 +33,7 @@ Kurallar:
 | Durum | Görev | Konu |
 |-------|-------|------|
 | [x] | G0 | Gerçek SITL'de duman testi |
-| [ ] | G1 | Komut–yanıt öznitelikleri |
+| [x] | G1 | Komut–yanıt öznitelikleri |
 | [ ] | G2 | Boş pencereler |
 | [ ] | G3 | Normal uçuşa meşru operatör komutları |
 | [ ] | G4 | Sahte telemetri yönü |
@@ -118,7 +118,7 @@ geçiyor; `disarm` saldırısı uçuşta reddediliyor (ACK sonucu 4).
 
 ## G1 — Komut–yanıt öznitelikleri
 
-- [ ] **Durum**
+- [x] **Durum**
 
 **Amaç:** Mevcut öznitelikler paketleri yalnızca sayıyor. Bir saldırının izi çoğu
 zaman komut ile yanıtı arasındaki ilişkide görülür: yanıtsız komut, istenmemiş
@@ -153,9 +153,20 @@ ACK, komutsuz mod değişimi. Model bu ilişkiyi görebilmeli.
   sayılıyor.
 
 **Etkilenen dosyalar:** `betikler/komut_yanit.py` (yeni), `betikler/oznitelik.py`,
-`belgeler/VERI_SEMASI.md`, `tests/`
+`betikler/kayit_proxy.py`, `belgeler/VERI_SEMASI.md`, `belgeler/SORUN_GIDERME.md`,
+`tests/`
 
-**Sonuç:** —
+**Sonuç:** 2026-11-06 — Tamamlandı. `pytest` 64 test geçti. 10 sütun `pencereler.parquet`'te
+ve `VERI_SEMASI.md`'de; nedensellik her pencere sınırında testle doğrulandı. Gerçek veri
+kayıtta bir hata gösterdi: `pymavlink` varsayılan modda SITL'nin başlangıç baytlarında
+takılıyor, paketler saniyelerce geç damgalanıyordu. `robust_parsing` ile düzeltildi, regresyon
+testi eklendi. Bu yüzden `F100` ve `F101` ilk saniyelerde güvenilir değildir, veri setine
+girmez. Düzeltme sonrası: `F102_normal` (180 sn) ihlal, yanıtsız ve red sıfır; tek
+`komutsuz_mod_degisimi` görev sonundaki meşru AUTO → RTL. SITL/gerçek saat oranı 0,99995.
+`F103_spoof_cmd` (`mod_rtl`): mod saldırı anında RTL'ye geçti; 20 sahte komutun hepsi
+kabul edildi. Sınır: Kabul edilen geçerli bir sahte komut tutarsızlık üretmez, yalnızca
+`ack_eslesme_sayisi` artar (saldırıda 1,82, dışında 0,02/pencere). Boş pencereye düşen
+olaylar G2'ye kadar tabloya girmez; bu dört uçuşta kayıp olmadı.
 
 ---
 

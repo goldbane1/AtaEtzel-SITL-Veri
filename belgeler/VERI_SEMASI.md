@@ -101,6 +101,30 @@ tutulur:
 - `paket_arasi_ort_s`, `paket_arasi_std_s` — paketler arası sürenin ortalama/std'si
 - `komut_sayisi` — komut mesajı sayısı
 
+Komut–yanıt tutarlılığı (`betikler/komut_yanit.py`). Eşleştirme sysid ile değil, yön +
+içerikle yapılır; bir pencere yalnızca kendi bitişine kadarki veriyi kullanır.
+
+| Sütun | Tip | Açıklama | Sayıldığı pencere |
+|-------|-----|----------|-------------------|
+| `ack_gecikme_ort_ms` | float | Eşleşen ACK'lerin ortalama gecikmesi; eşleşme yoksa 0 | ACK'in geldiği |
+| `ack_gecikme_max_ms` | float | Eşleşen ACK'lerin en büyük gecikmesi; eşleşme yoksa 0 | ACK'in geldiği |
+| `ack_eslesme_sayisi` | int | `COMMAND_LONG`/`INT` ile aynı `command` üzerinden eşleşen ACK sayısı | ACK'in geldiği |
+| `yanitsiz_komut` | int | 3 sn içinde ACK gelmeyen komut sayısı | Zaman aşımının dolduğu |
+| `eslesmeyen_ack` | int | Bekleyen komutu olmayan ACK sayısı (geç gelen ACK dahil) | ACK'in geldiği |
+| `ack_red` | int | Sonucu kabul olmayan ACK sayısı (`IN_PROGRESS` hariç) | ACK'in geldiği |
+| `gorev_protokol_ihlali` | int | `MISSION_COUNT` → `REQUEST` → `ITEM` → `ACK` akışına uymayan mesaj sayısı | Mesajın geldiği |
+| `param_yanitsiz` | int | 3 sn içinde `PARAM_VALUE` gelmeyen `PARAM_SET` sayısı | Zaman aşımının dolduğu |
+| `mod_tutarsiz` | int | `SET_MODE`/`DO_SET_MODE` sonrası 3 sn içinde istenen moda geçilmeyen istek sayısı | Zaman aşımının dolduğu |
+| `komutsuz_mod_degisimi` | int | İstek olmadan gerçekleşen mod değişimi sayısı | Değişimin görüldüğü |
+
+Notlar:
+
+- Plane-4.7.2 `SET_MODE` mesajına `COMMAND_ACK` göndermez; bu yüzden `SET_MODE` için
+  yalnızca mod değişimi izlenir.
+- Reddedilen `DO_SET_MODE` için mod değişimi beklenmez, `mod_tutarsiz` sayılmaz.
+- Görev sonunda RTL'ye geçiş gibi meşru otomatik değişimler de
+  `komutsuz_mod_degisimi` sayılır; açılış modundan (`INITIALISING`) çıkış sayılmaz.
+
 En sonda:
 
 - `label` — `normal` veya pencerede baskın saldırı türü

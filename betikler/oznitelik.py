@@ -14,6 +14,7 @@ VERI_SEMASI.md'deki öznitelik sütunlarını hesaplar. Çıktı:
   - seq atlama ve seq tekrar sayısı
   - paketler arası sürenin ortalaması ve std'si
   - komut mesajı sayısı
+  - komut–yanıt tutarlılığı (komut_yanit.py, 10 sütun)
   - label (pencerede en az bir saldırı paketi varsa o tür, yoksa normal)
   - attack_ratio (penceredeki saldırı paketi oranı)
 
@@ -30,6 +31,7 @@ import argparse
 import os
 
 import numpy as np
+import komut_yanit
 import ortak
 
 try:
@@ -128,6 +130,17 @@ def bir_ucus_oznitelik(ucus_id: str, cfg: dict) -> "pd.DataFrame | None":
         pencere_baslangic = t0 + int(pencere_no) * PENCERE_NS
         satirlar.append(_pencere_oznitelikleri(grup, ucus_id, pencere_baslangic))
     sonuc = pd.DataFrame(satirlar)
+
+    # Komut–yanıt öznitelikleri. Boş pencereler G2'ye kadar üretilmediği için,
+    # boş bir pencereye düşen zaman aşımı olayı şimdilik tabloya girmez.
+    pencere_nolari = [int(no) for no in df["_pencere"].drop_duplicates().sort_values()]
+    komut_yanit_df = komut_yanit.komut_yanit_oznitelikleri(df, t0, PENCERE_NS)
+    for sutun in komut_yanit.SUTUNLAR:
+        sonuc[sutun] = komut_yanit_df[sutun].to_numpy()[pencere_nolari]
+
+    # Sözleşme: label ve attack_ratio en sonda kalır (VERI_SEMASI.md).
+    son_sutunlar = ["attack_ratio", "label"]
+    sonuc = sonuc[[s for s in sonuc.columns if s not in son_sutunlar] + son_sutunlar]
     ortak.log(f"{ucus_id}: {len(sonuc)} pencere çıkarıldı.", "TAMAM")
     return sonuc
 

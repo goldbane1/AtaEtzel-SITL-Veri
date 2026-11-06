@@ -89,12 +89,28 @@ class KayitProxy:
         self.baslangic_ns = ortak.simdi_ns()
 
         # MAVLink çözümleyiciler (her yön için ayrı, seq takibi doğru olsun)
-        self._mav_gcs = mavlink2.MAVLink(None) if mavlink2 else None
-        self._mav_uav = mavlink2.MAVLink(None) if mavlink2 else None
+        self._mav_gcs = self._ayristirici_olustur()
+        self._mav_uav = self._ayristirici_olustur()
 
         self.udp_sok: socket.socket | None = None
         self.tcp_sok: socket.socket | None = None
         self.calisiyor = True
+
+    @staticmethod
+    def _ayristirici_olustur():
+        """Hata toleranslı MAVLink ayrıştırıcısı oluşturur.
+
+        SITL bağlantının başında MAVLink olmayan bayt gönderir. Varsayılan modda
+        pymavlink burada hata verip saniyelerce mesaj çıkarmaz, sonra hepsini
+        birden verir: paketler yanlış zamanla damgalanır. robust_parsing bozuk
+        baytları atlayıp hemen devam eder; zaman damgalarının doğruluğu buna
+        bağlıdır.
+        """
+        if mavlink2 is None:
+            return None
+        mav = mavlink2.MAVLink(None)
+        mav.robust_parsing = True
+        return mav
 
     # -----------------------------------------------------------------
     # Soket kurulumu
@@ -139,7 +155,8 @@ class KayitProxy:
             return
         try:
             mesajlar = mav.parse_buffer(veri) or []
-        except Exception:
+        except Exception as e:
+            ortak.log(f"{direction}: MAVLink ayrıştırma hatası: {e}", "UYARI")
             mesajlar = []
         for m in mesajlar:
             if m.get_type() == "BAD_DATA":

@@ -89,6 +89,7 @@ Saldırı betikleri (localhost)─┘          (her paketi kaydeder)
 | `betikler/saldiri_uret.sh` | Tek komutla saldırılı uçuş |
 | `betikler/saldirilar/*.py` | 5 saldırı + `saldiri_temel.py` (ortak argümanlar, ground_truth yazımı) |
 | `betikler/etiketle.py` | `label` sütunu ekler |
+| `betikler/komut_yanit.py` | Komut–yanıt tutarlılığı öznitelikleri (10 sütun) |
 | `betikler/oznitelik.py` | 1 sn pencere öznitelikleri → `veri/oznitelikler/pencereler.parquet` |
 | `betikler/bol.py` | Uçuş düzeyinde katmanlı bölme → `veri/bolme.csv` |
 | `betikler/dogrula.py` | Uçuş klasörü eksiksizlik kontrolü |

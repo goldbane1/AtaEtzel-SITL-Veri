@@ -56,10 +56,15 @@ Her sorun için **belirti → neden → çözüm** verilmiştir.
   yetmeyebilir, `arduplane` ayrı bir `xterm` içinde çalışmaya devam edebilir. Portun
   boşaldığını `ss -tln | grep 5760` ile doğrulayın.
 
-## Uçuşun ilk ~10 sn'sinde telemetri yok, sonra yığılarak geliyor
-- **Neden:** SITL'nin **ilk** açılışında görüldü, sonraki açılışta telemetri ~2 sn'de
-  başladı. Proxy sorunu değildir: uçuş boyunca en büyük boşluk 0,26 sn.
-- **Çözüm:** İşlem gerekmez.
+## Parquet'te paket sırası mantıksız / ilk saniyelerde telemetri yok
+- **Belirti:** Paketler ilk saniyelerde hiç görünmüyor, sonra aynı zaman damgasıyla
+  yığılıyor; `MISSION_ITEM`, onu isteyen `MISSION_REQUEST`'ten önce görünüyor.
+- **Neden:** SITL bağlantı başında MAVLink olmayan bayt yollar. Varsayılan modda
+  `pymavlink` burada takılıp mesajları geciktirir. `kayit_proxy.py` artık
+  `robust_parsing` kullanır; bu düzeltmeden önce üretilen uçuşlarda (`F100`, `F101`)
+  ilk saniyelerin zaman damgaları güvenilir değildir.
+- **Çözüm:** Eski uçuşları veri setine katmayın. Telemetrinin başladığı anı ve görev
+  mesajlarının sırasını kontrol edin.
 
 ## `paketler.parquet` boş
 - **Neden:** Proxy'ye hiç trafik gelmedi (GCS/uçuş proxy'ye değil doğrudan SITL'ye
