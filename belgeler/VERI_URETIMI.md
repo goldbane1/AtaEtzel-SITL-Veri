@@ -90,6 +90,43 @@ sonra kaydedilir, kaybolan paket kayıtta yoktur. Uçaktan çıkan paket (`uav2g
 kaydedilir sonra bozulur, kaybolan paket kayıtta durur ama yer istasyonuna ulaşmaz. Bu
 yüzden duvarın ölçtüğü ACK gecikmesi kanal gecikmesinden etkilenmez.
 
+## Gece boyu toplu üretim
+
+`toplu_uretim.py` uçuşları insansız, arka arkaya yapar. SITL'yi kendisi başlatıp kapatır,
+ayrı terminalde açmayın. Başlamadan 5760 portunun boş olduğunu ve yeterli uçuş numarası
+kaldığını denetler.
+
+```bash
+source .venv/bin/activate
+python betikler/toplu_uretim.py --normal 40 --saldirili 40 \
+    --kanal-profilleri temiz,hafif,orta --ana-tohum 1
+```
+
+| Parametre | Anlamı |
+|-----------|--------|
+| `--normal` | Normal uçuş sayısı |
+| `--saldirili` | Saldırılı uçuş sayısı; türler dengeli dağılır |
+| `--kanal-profilleri` | Virgülle profil listesi; dengeli dağılır |
+| `--ana-tohum` | Aynı değer aynı planı üretir. **Her çalıştırmada ve makinede farklı verin** |
+| `--no-isleme` | Sonda etiketleme, öznitelik ve doğrulamayı atlar |
+
+Her uçuş için tohuma bağlı seçilenler: görev, rüzgâr (0–8 m/s, 0–359°), süre (180–300 sn),
+telemetri hızı (2, 4, 8 Hz), irtifa farkı (−30…+50 m), kanal tohumu; saldırılı uçuşlarda
+saldırı türü, alt türü, başlangıcı ve süresi. Saldırı, kalkış doğrulandıktan en az 16 sn sonra
+başlar ve sonrasında en az 16 sn temiz kuyruk kalır. Hepsi `meta.json`'daki `toplu_plan`
+alanına yazılır.
+
+**Uçuşlar arasında SITL yeniden başlatılır.** Uçak bir önceki uçuştan havada kalır ve
+yerinde reset rüzgâr, EKF ve görev durumunu taşıyabilir. Yeniden başlatma, saldırı uçağı
+bozsa bile sonraki uçuşu temiz başlatır. `arduplane` her seferinde boş bir klasörde çalışır.
+
+Bir uçuş başarısız olursa loglanır, `meta.json`'a `ucus_basarili: false` yazılır ve sıradakine
+geçilir. Başarısız uçuşlar etiketleme, öznitelik ve bölmeye girmez; `dogrula.py` bunları ayrı
+gösterir. Sonda özet tablo basılır.
+
+Uçuş başı yaklaşık 5 dk sürer, gecede ~95 uçuş eder. Bilgisayarın uyku moduna geçmediğinden
+emin olun.
+
 ## 3) İşleme
 
 ```bash

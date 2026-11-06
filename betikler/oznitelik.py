@@ -313,6 +313,9 @@ def main() -> int:
             ortak.hata_ve_cik(f"Uçuş klasörü yok: {kok}")
         for ad in sorted(os.listdir(kok)):
             if (kok / ad).is_dir():
+                if ortak.ucus_basarisiz_mi(ad, cfg):
+                    ortak.log(f"{ad}: başarısız uçuş, atlanıyor.", "UYARI")
+                    continue
                 d = bir_ucus_oznitelik(ad, cfg)
                 if d is not None:
                     parcalar.append(d)

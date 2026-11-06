@@ -189,6 +189,18 @@ def sonraki_ucus_id(ad_son_eki: str = "normal", cfg: dict | None = None) -> str:
     return f"F{no}_{ad_son_eki}"
 
 
+def ucus_basarisiz_mi(ucus_id: str, cfg: dict | None = None) -> bool:
+    """meta.json uçuşu başarısız diyorsa True; böyle uçuşlar işleme hattına girmez."""
+    import json
+    yol = ucus_klasoru(ucus_id, cfg) / "meta.json"
+    if not yol.exists():
+        return False
+    try:
+        return json.loads(yol.read_text(encoding="utf-8")).get("ucus_basarili") is False
+    except ValueError:
+        return False
+
+
 # ---------------------------------------------------------------------
 # Uçuş numarası ÇAKIŞMA KORUMASI
 # ---------------------------------------------------------------------

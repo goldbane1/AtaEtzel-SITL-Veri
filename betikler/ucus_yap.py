@@ -51,6 +51,8 @@ KALKIS_IRTIFA_ESIGI_M = 50.0
 KALKIS_ZAMAN_ASIMI_S = 120.0     # kalkıştan sonra doğrulama için tanınan süre
 HAZIR_ZAMAN_ASIMI_S = 180.0      # GPS/EKF hazır olması için tanınan süre
 TELEMETRI_HIZI_HZ = 4            # varsayılan telemetri akış hızı
+TELEMETRI_ISTEK_SAYISI = 3       # akış isteği kaç kez gönderilir
+TELEMETRI_ISTEK_ARALIGI_S = 2.0
 
 # Operatör komutları
 OPERATOR_ARALIK_S = (20.0, 40.0)   # iki komut arası süre (ortalama 30 sn)
@@ -99,6 +101,7 @@ class KalkisIzleyici:
         self.maks_irtifa_m = 0.0
         self.waypoint_ilerlemesi = False
         self.son_gorev_sirasi: int | None = None
+        self.dogrulama_t_ns: int | None = None
         self._armed = False
         self._auto = False
 
@@ -150,6 +153,7 @@ class KalkisIzleyici:
             "maks_irtifa_m": round(self.maks_irtifa_m, 1),
             "waypoint_ilerlemesi": self.waypoint_ilerlemesi,
             "son_gorev_sirasi": self.son_gorev_sirasi,
+            "dogrulama_t_ns": self.dogrulama_t_ns,
         }
 
 
@@ -416,27 +420,30 @@ def hazir_bekle(baglanti, hz: int = TELEMETRI_HIZI_HZ,
     ortak.log("GPS ve ön-arm kontrolleri bekleniyor...", "BILGI")
     bitis = time.time() + zaman_asimi_s
     son_hb = 0.0
-    prearm_tamam = gps_tamam = telemetri_var = False
+    prearm_tamam = gps_tamam = False
+    istek_sayisi = 1          # telemetri_iste bir kez çağrılmış olarak gelinir
     son_istek = time.time()
     while time.time() < bitis:
         if time.time() - son_hb >= 1.0:
             gcs_heartbeat(baglanti)
             son_hb = time.time()
-        # Akış isteği bozuk kanalda kaybolmuş olabilir.
-        if not telemetri_var and time.time() - son_istek >= 3.0:
+        # REQUEST_DATA_STREAM'in yanıtı yoktur ve bozuk kanalda kaybolabilir. Kaybolursa uçak
+        # varsayılan 1 Hz'te kalır, meta.json yanlış olur. Bu yüzden tekrar gönderilir.
+        if istek_sayisi < TELEMETRI_ISTEK_SAYISI \
+                and time.time() - son_istek >= TELEMETRI_ISTEK_ARALIGI_S:
             telemetri_iste(baglanti, hz)
+            istek_sayisi += 1
             son_istek = time.time()
         msg = baglanti.recv_match(
             type=["SYS_STATUS", "GPS_RAW_INT"], blocking=True, timeout=1
         )
         if msg is None:
             continue
-        telemetri_var = True
         if msg.get_type() == "SYS_STATUS":
             prearm_tamam = bool(msg.onboard_control_sensors_health & PREARM_BITI)
         else:
             gps_tamam = msg.fix_type >= GPS_3D_FIX
-        if prearm_tamam and gps_tamam:
+        if prearm_tamam and gps_tamam and istek_sayisi >= TELEMETRI_ISTEK_SAYISI:
             ortak.log("Uçak arm için hazır.", "TAMAM")
             return True
     ortak.log(
@@ -654,6 +661,7 @@ def main() -> int:
             onceki = izleyici.dogrulandi
             izleyici.mesaj_isle(msg)
             if izleyici.dogrulandi and not onceki:
+                izleyici.dogrulama_t_ns = ortak.simdi_ns()
                 ortak.log(
                     f"Kalkış doğrulandı: irtifa {izleyici.maks_irtifa_m:.1f} m, "
                     "AUTO'da waypoint ilerlemesi var.", "TAMAM",

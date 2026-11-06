@@ -5,7 +5,8 @@
 Bir uçuşın paketler.parquet'ini ve (varsa) ground_truth.json'unu okur,
 her pakete bir "label" ekler:
   - Paketin src_ip:src_port'u ground_truth'taki attacker_addr ile eşleşiyor
-    VE t_ns, [start_ns, end_ns] aralığındaysa  -> label = attack_type
+    VE t_ns, [start_ns, end_ns + 1 sn] aralığındaysa -> label = attack_type
+    (1 sn: bozuk kanalda gecikmeli ulaşan son paketler için)
   - Aksi halde                                  -> label = "normal"
   - ground_truth.json yoksa                     -> tüm paketler "normal"
 
@@ -29,6 +30,10 @@ try:
     import pandas as pd
 except ImportError:
     pd = None
+
+# Bozuk kanalda saldırının son paketleri duvara saldırı bittikten sonra ulaşır.
+# Saldırgan adresi uçuşa özgü olduğu için bitişe tanınan bu pay yanlış etiket üretmez.
+GECIKME_PAYI_NS = 1_000_000_000
 
 
 def _ground_truth_oku(klasor) -> list[dict]:
@@ -61,7 +66,7 @@ def bir_ucus_etiketle(ucus_id: str, cfg: dict) -> bool:
             addr = str(s.get("attacker_addr", ""))
             tur = s.get("attack_type", "normal")
             bas = int(s.get("start_ns", 0))
-            bit = int(s.get("end_ns", 0))
+            bit = int(s.get("end_ns", 0)) + GECIKME_PAYI_NS
             maske = (df["_addr"] == addr) & (df["t_ns"] >= bas) & (df["t_ns"] <= bit)
             df.loc[maske, "label"] = tur
             ortak.log(
@@ -97,6 +102,9 @@ def main() -> int:
             ortak.hata_ve_cik(f"Uçuş klasörü yok: {kok}")
         for ad in sorted(os.listdir(kok)):
             if (kok / ad).is_dir():
+                if ortak.ucus_basarisiz_mi(ad, cfg):
+                    ortak.log(f"{ad}: başarısız uçuş, atlanıyor.", "UYARI")
+                    continue
                 bir_ucus_etiketle(ad, cfg)
     return 0
 

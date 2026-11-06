@@ -32,6 +32,7 @@ except ImportError:
 
 
 PENCERE_NS = 1_000_000_000  # 1 saniye
+TEMIZ_BOLUM_NS = 16 * PENCERE_NS
 
 
 def pencere_sorunlari(pencereler: "pd.DataFrame", paketler: "pd.DataFrame") -> list[str]:
@@ -53,6 +54,23 @@ def pencere_sorunlari(pencereler: "pd.DataFrame", paketler: "pd.DataFrame") -> l
         sorunlar.append(f"pencere sayısı {len(pencereler)}, beklenen {beklenen}")
     if int(baslangiclar.iloc[0]) != t0:
         sorunlar.append("ilk pencere ilk paketle başlamıyor")
+    return sorunlar
+
+
+def saldiri_zamanlama_sorunlari(saldirilar: list[dict], kalkis_ns: int | None,
+                                son_paket_ns: int) -> list[str]:
+    """Saldırı öncesi ve sonrası 16 sn temiz bölüm kuralını denetler.
+
+    RS-TCN son 16 pencereye bakar. Kalkış zamanı kayıtlı olmayan eski uçuşlarda
+    yalnızca kuyruk denetlenir.
+    """
+    sorunlar: list[str] = []
+    for s in saldirilar:
+        bas, bit = int(s.get("start_ns", 0)), int(s.get("end_ns", 0))
+        if kalkis_ns is not None and bas - kalkis_ns < TEMIZ_BOLUM_NS:
+            sorunlar.append(f"'{s.get('attack_type')}' kalkıştan sonra 16 sn dolmadan başladı")
+        if son_paket_ns - bit < TEMIZ_BOLUM_NS:
+            sorunlar.append(f"'{s.get('attack_type')}' sonrası 16 sn temiz kuyruk yok")
     return sorunlar
 
 
@@ -123,6 +141,13 @@ def bir_ucus_dogrula(ucus_id: str, cfg: dict) -> bool:
                     sorunlar.append(
                         f"'{tur}' saldırı aralığında etiketli paket yok"
                     )
+            kalkis_ns = None
+            if meta_yolu.exists():
+                meta = json.loads(meta_yolu.read_text(encoding="utf-8"))
+                kalkis_ns = (meta.get("kalkis_kontrolu") or {}).get("dogrulama_t_ns")
+            sorunlar.extend(saldiri_zamanlama_sorunlari(
+                saldirilar, kalkis_ns, int(df["t_ns"].max())
+            ))
 
     if df is not None and "label" in df.columns:
         sorunlar.extend(fake_telemetry_sorunlari(df))
@@ -164,15 +189,20 @@ def main() -> int:
     kok = ortak.repo_koku() / cfg.get("veri_klasoru", "veri/ucuslar")
     if not kok.exists():
         ortak.hata_ve_cik(f"Uçuş klasörü yok: {kok}")
-    toplam, tamam = 0, 0
+    toplam, tamam, basarisiz = 0, 0, []
     for ad in sorted(os.listdir(kok)):
         if (kok / ad).is_dir():
+            if ortak.ucus_basarisiz_mi(ad, cfg):
+                basarisiz.append(ad)
+                continue
             toplam += 1
             if bir_ucus_dogrula(ad, cfg):
                 tamam += 1
     print("")
     ortak.log(f"Özet: {tamam}/{toplam} uçuş TAMAM.",
               "TAMAM" if tamam == toplam else "UYARI")
+    if basarisiz:
+        ortak.log(f"Başarısız uçuşlar, veri setine girmez ({len(basarisiz)}): {basarisiz}", "UYARI")
     return 0 if tamam == toplam else 1
 
 

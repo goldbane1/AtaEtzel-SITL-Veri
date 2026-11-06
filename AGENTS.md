@@ -92,6 +92,7 @@ Saldırı betikleri (localhost)─┘          (her paketi kaydeder)
 | `betikler/ucus_yap.py` | Görev yükler, arm/AUTO/kalkış, uçurur |
 | `betikler/normal_uretim.sh` | Tek komutla normal uçuş |
 | `betikler/saldiri_uret.sh` | Tek komutla saldırılı uçuş |
+| `betikler/toplu_uretim.py` | Gece boyu insansız toplu üretim (SITL'yi kendisi yönetir) |
 | `betikler/saldirilar/*.py` | 5 saldırı + `saldiri_temel.py` (ortak argümanlar, ground_truth yazımı) |
 | `betikler/etiketle.py` | `label` sütunu ekler |
 | `betikler/komut_yanit.py` | Komut–yanıt tutarlılığı öznitelikleri (10 sütun) |

@@ -196,3 +196,23 @@ def test_yanitsiz_komutun_ack_alani_dolar():
     y.zaman_asimlarini_isle(hepsi=True)
     assert y.kayitlar[0]["ack"] == "zaman_asimi"
     assert not y.bekleyenler
+
+
+class _HazirBaglanti(SahteBaglanti):
+    """Uçak başından hazır: Yalnızca tekrar sayısı sınanır."""
+
+    def recv_match(self, type=None, blocking=True, timeout=None):  # noqa: A002
+        return Mesaj("SYS_STATUS", onboard_control_sensors_health=ucus_yap.PREARM_BITI) \
+            if not getattr(self, "gps", False) and not setattr(self, "gps", True) \
+            else Mesaj("GPS_RAW_INT", fix_type=3)
+
+
+def test_telemetri_istegi_kaybolmaya_karsi_tekrarlanir(monkeypatch):
+    """İstek kaybolursa uçak 1 Hz'te kalır, meta.json yanlış olurdu (F112)."""
+    monkeypatch.setattr(ucus_yap, "TELEMETRI_ISTEK_ARALIGI_S", 0.01)
+    baglanti = _HazirBaglanti()
+    ucus_yap.telemetri_iste(baglanti, 8)
+    assert ucus_yap.hazir_bekle(baglanti, 8, zaman_asimi_s=5)
+    istekler = [a for ad, a in baglanti.mav.gonderilen if ad == "request_data_stream_send"]
+    assert len(istekler) == ucus_yap.TELEMETRI_ISTEK_SAYISI
+    assert all(a[3] == 8 for a in istekler)

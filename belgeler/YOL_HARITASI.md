@@ -39,7 +39,7 @@ Kurallar:
 | [x] | G4 | Sahte telemetri yönü |
 | [x] | G5 | Yazma performansı |
 | [x] | G6 | Kanal bozulması |
-| [ ] | G6.5 | Toplu üretim |
+| [x] | G6.5 | Toplu üretim |
 | [ ] | G6.6 | Değerlendirme bölmeleri |
 | [ ] | G7 | Uçtan uca doğrulama |
 | [ ] | G8 | Tam veri seti üretimi |
@@ -493,7 +493,7 @@ konumunun doğal sonucudur. Kanal kodu ayrı birimde: `kanal.py`.
 
 ## G6.5 — Toplu üretim
 
-- [ ] **Durum**
+- [x] **Durum**
 
 **Amaç:** Modelin yeterli veriye ulaşması için onlarca uçuş gerekir ve `--speedup`
 kullanılamadığı için hepsi gerçek zamanlıdır. Üretim, insan başında durmadan gece
@@ -566,7 +566,24 @@ boyu çalışabilmeli; başarısız bir uçuş tüm geceyi yakmamalı.
 `betikler/dogrula.py`, `betikler/saldirilar/*.py`, `belgeler/VERI_URETIMI.md`,
 `belgeler/VERI_SEMASI.md`, `tests/`
 
-**Sonuç:** —
+**Sonuç:** 2026-11-06 — Tamamlandı. Kabul çalıştırması (`--normal 4 --saldirili 2`, dört kanal
+profili, ana tohum 1): 6 uçuş insansız 27 dk'da bitti, başarısız yok, `dogrula.py` hepsine TAMAM.
+Ek çalıştırma (`--saldirili 5`, ana tohum 2): beş saldırı türü de gerçek uçuşta çalıştı, 21,5 dk,
+başarısız yok. Toplam 23/23 uçuş TAMAM.
+
+**Seçim: SITL yeniden başlatılır.** Gerekçe: Uçak önceki uçuştan havada kalır; reset rüzgâr, EKF
+ve görev durumunu taşıyabilir. Yeniden başlatma temiz başlangıcı garanti eder, saldırı uçağı
+bozsa bile sonraki uçuş etkilenmez. `arduplane` doğrudan, her uçuşta boş klasörde çalışır;
+böylece EEPROM da temizdir, xterm gerekmez.
+
+Saldırı imzaları (saldırı içi / dışı, pencere ortalaması): `spoof_cmd` taklit compid
+`gcs_sysid_seq_bozulma` 1,87 / 0,02 ve mod AUTO → RTL; `replay` `gorev_protokol_ihlali` 18,4 / 0;
+`flood` `toplam_paket` 417 / 63; `impersonation` `ayni_komut_tekrari` 5,5 / 0; `fake_telemetry`
+`n_g2u_GLOBAL_POSITION_INT` aynı imza.
+
+Çalıştırmalarda bulunan iki hata düzeltildi: `agir` kanalda telemetri isteği kaybolunca uçak
+1 Hz'te kalıp `meta.json` yanlış oluyordu (istek 3 kez gönderiliyor, doğrulandı); gecikmeli son
+saldırı paketleri `normal` etiketleniyordu (etikette 1 sn pay). K3 hâlâ açık.
 
 ---
 
