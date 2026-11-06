@@ -36,7 +36,7 @@ Kurallar:
 | [x] | G1 | Komut–yanıt öznitelikleri |
 | [x] | G2 | Boş pencereler |
 | [x] | G3 | Normal uçuşa meşru operatör komutları |
-| [ ] | G4 | Sahte telemetri yönü |
+| [x] | G4 | Sahte telemetri yönü |
 | [ ] | G5 | Yazma performansı |
 | [ ] | G6 | Kanal bozulması |
 | [ ] | G6.5 | Toplu üretim |
@@ -314,7 +314,7 @@ yeniden denenmedi; G4 uçuşunda görülecek.
 
 ## G4 — Sahte telemetri yönü
 
-- [ ] **Durum**
+- [x] **Durum**
 
 **Amaç:** `fake_telemetry.py` şu an 14550'ye yazıyor; yani sahte telemetri uçağa da
 gidiyor. Gerçekte bu saldırı yer istasyonunu kandırır, uçağı etkilememelidir. Paket
@@ -371,7 +371,12 @@ yalnızca uyarı ve panel bildirimidir (`MIMARI.md`).
 `betikler/dogrula.py`, `config.yaml`, `README.md`, `belgeler/VERI_SEMASI.md`,
 `tests/`
 
-**Sonuç:** —
+**Sonuç:** 2026-11-06 — Tamamlandı (K1 kararına göre). `pytest` 164 test geçti. `F109_fake_telemetry`
+(150 sn): 76 saldırı paketi, tamamı `gcs2uav`, sysid 1, enjekte eden adresle; 75 sahte
+konumun sapması 503–506 m. Normal uçuşlarda `n_g2u_GLOBAL_POSITION_INT` 0, saldırıda
+4,69/pencere. `dogrula.py` 10/10 TAMAM. 14551'e yazan adres, kanal dinlemeyi temsil eden
+telemetri kopyası alır, bu kopya kaydedilmez. `RTL_ALTITUDE` bu uçuşta okunmadı; adı kaynakla
+testte doğrulandı, gerçek uçuşta G6.5 veya G7'de görülecek.
 
 ---
 

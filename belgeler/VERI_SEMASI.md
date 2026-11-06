@@ -97,6 +97,22 @@ tutulur:
 `attack_type` şunlardan biridir: `spoof_cmd`, `impersonation`, `replay`, `flood`,
 `fake_telemetry`.
 
+## Saldırı yönleri
+
+Kayıttaki yön **duvarın gözündendir**: Paket hedefine göre değil, duvarın onu nereden
+gördüğüne göre yazılır; telsizden gelen her paket `gcs2uav`'dir.
+
+| Saldırı | Hedef | Giriş portu | SITL'ye iletilir mi | Kayıttaki yön |
+|---------|-------|-------------|---------------------|---------------|
+| `spoof_cmd` | Uçak | 14550 | Evet | `gcs2uav` |
+| `impersonation` | Uçak | 14550 | Evet | `gcs2uav` |
+| `replay` | Uçak | 14550 | Evet | `gcs2uav` |
+| `flood` | Uçak | 14550 | Evet | `gcs2uav` |
+| `fake_telemetry` | Yer istasyonu | 14551 | **Hayır** | `gcs2uav` |
+
+`fake_telemetry` paketleri uçağın kendi sysid'iyle gönderilir. `dogrula.py` yön ve
+sysid'i denetler. Varsayım ve sınırlılık için: [MIMARI.md](MIMARI.md).
+
 ## `pencereler.parquet` (1 sn'lik öznitelikler)
 
 Pencereler **kesintisizdir**: İlk paketten son pakete kadar her saniye için tam bir

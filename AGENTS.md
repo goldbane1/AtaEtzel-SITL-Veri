@@ -70,7 +70,9 @@ GCS (ucus_yap.py / MAVProxy) ─┐
 Saldırı betikleri (localhost)─┘          (her paketi kaydeder)
 ```
 
-- `gcs2uav`: 14550'ye gelen paket → SITL'ye iletilir.
+- `gcs2uav`: 14550'ye gelen paket → SITL'ye iletilir. Yön duvarın gözündendir.
+- Havadan enjeksiyon: 14551'e gelen paket → yer istasyonuna gider, SITL'ye gitmez,
+  `gcs2uav` kaydedilir (sahte telemetri).
 - `uav2gcs`: SITL telemetrisi → 14550'ye yazmış tüm adreslere geri döner.
 - Saldırgan ile meşru GCS'yi etiketlemede ayıran şey `src_ip:src_port`
   (`ground_truth.json` içindeki `attacker_addr`) + zaman aralığıdır.

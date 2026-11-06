@@ -25,6 +25,10 @@ host: "127.0.0.1"
 # Yer istasyonu/saldırgan betiklerinin yazdığı UDP portu (ortak telsiz kanalı).
 udp_port: 14550
 
+# Havadan enjeksiyon portu (yalnızca 127.0.0.1). Sahte telemetri buraya yazılır:
+# yer istasyonuna gider, SITL'ye iletilmez.
+hava_enjeksiyon_port: 14551
+
 # ArduPlane SITL'nin dinlediği TCP portu (otopilota giden kablo).
 tcp_port: 5760
 

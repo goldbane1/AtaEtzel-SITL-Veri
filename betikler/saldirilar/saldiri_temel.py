@@ -49,8 +49,9 @@ def temel_arg_parser(aciklama: str):
     return ap
 
 
-def gonderen_kur(cfg: dict, source_system: int = 255, source_component: int = 190):
-    """Proxy'nin UDP 14550 portuna bağlanan bir MAVLink göndereni kurar.
+def gonderen_kur(cfg: dict, source_system: int = 255, source_component: int = 190,
+                 port: int | None = None):
+    """Proxy'nin UDP portuna (varsayılan 14550) bağlanan bir MAVLink göndereni kurar.
 
     GÜVENLİK: Bağlanmadan önce hedefin localhost olduğunu zorunlu kılar.
     Saldırı betikleri doğrudan SITL'ye DEĞİL, proxy'nin telsiz kanalına
@@ -61,7 +62,7 @@ def gonderen_kur(cfg: dict, source_system: int = 255, source_component: int = 19
         ortak.hata_ve_cik("pymavlink kurulu değil. setup.sh çalıştırın.")
 
     host = cfg.get("host", "127.0.0.1")
-    udp_port = int(cfg.get("udp_port", 14550))
+    udp_port = int(port if port is not None else cfg.get("udp_port", 14550))
 
     # ---- GÜVENLİK KONTROLÜ (silmeyin) ----
     ortak.localhost_dogrula(host)

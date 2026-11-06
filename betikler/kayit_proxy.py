@@ -11,6 +11,12 @@ Mimari:
     GCS / saldırgan  --UDP 14550-->  [BU PROXY]  --TCP 5760-->  ArduPlane SITL
     SITL telemetrisi de bu proxy üzerinden 14550'ye yazan HERKESE geri döner.
 
+    Havadan enjeksiyon (sahte telemetri):
+    saldırgan  --UDP 14551-->  [BU PROXY]  --UDP-->  GCS adresleri
+    Bu paketler SITL'ye İLETİLMEZ. Yer istasyonunu hedefler ama duvar onları
+    telsizden gelirken gördüğü için gcs2uav olarak kaydedilir (MIMARI.md,
+    telsiz kanalı varsayımı).
+
 Yönler:
     gcs2uav : UDP 14550'den gelen paket -> SITL'ye (TCP 5760) iletilir.
     uav2gcs : SITL'den gelen paket -> 14550'ye yazmış tüm adreslere geri gider.
@@ -73,6 +79,7 @@ class KayitProxy:
         self.host = cfg.get("host", "127.0.0.1")
         self.udp_port = int(cfg.get("udp_port", 14550))
         self.tcp_port = int(cfg.get("tcp_port", 5760))
+        self.enjeksiyon_port = int(cfg.get("hava_enjeksiyon_port", 14551))
         self.raw_hex_kaydet = bool(cfg.get("raw_hex_kaydet", True))
 
         self.klasor = ortak.ucus_klasoru_hazirla(ucus_id, cfg)
@@ -81,6 +88,8 @@ class KayitProxy:
 
         # 14550'ye yazan GCS/saldırgan adresleri (telemetriyi geri yollamak için).
         self.gcs_adresleri: set[tuple[str, int]] = set()
+        # 14551'e yazan adresler: telemetriyi kanaldan dinleyen saldırganı temsil eder.
+        self.dinleyen_adresler: set[tuple[str, int]] = set()
 
         # Tampon ve sayaçlar
         self.tampon: list[dict] = []
@@ -91,8 +100,10 @@ class KayitProxy:
         # MAVLink çözümleyiciler (her yön için ayrı, seq takibi doğru olsun)
         self._mav_gcs = self._ayristirici_olustur()
         self._mav_uav = self._ayristirici_olustur()
+        self._mav_enjeksiyon = self._ayristirici_olustur()
 
         self.udp_sok: socket.socket | None = None
+        self.enjeksiyon_sok: socket.socket | None = None
         self.tcp_sok: socket.socket | None = None
         self.calisiyor = True
 
@@ -116,12 +127,22 @@ class KayitProxy:
     # Soket kurulumu
     # -----------------------------------------------------------------
     def soketleri_ac(self) -> None:
+        # GÜVENLİK: Tüm soketler yalnızca localhost'a açılır; ilk iş bu kontroldür.
+        ortak.localhost_dogrula(self.host)
+
         # UDP: GCS/saldırgan buraya yazar.
         self.udp_sok = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.udp_sok.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.udp_sok.bind((self.host, self.udp_port))
         self.udp_sok.setblocking(False)
         ortak.log(f"UDP {self.host}:{self.udp_port} dinleniyor (GCS/saldırgan tarafı).", "TAMAM")
+
+        # UDP: Havadan enjeksiyon girişi.
+        self.enjeksiyon_sok = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.enjeksiyon_sok.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.enjeksiyon_sok.bind((self.host, self.enjeksiyon_port))
+        self.enjeksiyon_sok.setblocking(False)
+        ortak.log(f"UDP {self.host}:{self.enjeksiyon_port} dinleniyor (havadan enjeksiyon).", "TAMAM")
 
         # TCP: SITL'ye bağlan.
         self.tcp_sok = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -184,6 +205,28 @@ class KayitProxy:
                 "fields_json": fields_json,
                 "raw_hex": ham.hex() if self.raw_hex_kaydet else "",
             })
+
+    def enjeksiyonu_isle(self, veri: bytes, adres: tuple[str, int]) -> None:
+        """14551'den gelen paketi yer istasyonuna iletir, SITL'ye GÖNDERMEZ.
+
+        Kayıt duvarın gözündendir: Paket telsizden geldiği için yön gcs2uav,
+        kaynak enjekte eden adrestir.
+        """
+        self.dinleyen_adresler.add(adres)
+        for hedef in list(self.gcs_adresleri):
+            try:
+                self.udp_sok.sendto(veri, hedef)
+            except OSError:
+                pass
+        self._paketleri_coz(self._mav_enjeksiyon, veri, "gcs2uav", adres[0], adres[1])
+
+    def _dinleyenlere_gonder(self, veri: bytes) -> None:
+        """Telemetrinin kopyasını kanalı dinleyen saldırgana verir (kayıt edilmez)."""
+        for hedef in list(self.dinleyen_adresler):
+            try:
+                self.enjeksiyon_sok.sendto(veri, hedef)
+            except OSError:
+                pass
 
     def _tampona_ekle(self, satir: dict) -> None:
         self.tampon.append(satir)
@@ -255,7 +298,7 @@ class KayitProxy:
 
         while self.calisiyor:
             okunabilir, _, _ = select.select(
-                [self.udp_sok, self.tcp_sok], [], [], 0.5
+                [self.udp_sok, self.enjeksiyon_sok, self.tcp_sok], [], [], 0.5
             )
             for sok in okunabilir:
                 if sok is self.udp_sok:
@@ -274,6 +317,13 @@ class KayitProxy:
                     self._paketleri_coz(
                         self._mav_gcs, veri, "gcs2uav", adres[0], adres[1]
                     )
+                elif sok is self.enjeksiyon_sok:
+                    try:
+                        veri, adres = self.enjeksiyon_sok.recvfrom(65535)
+                    except BlockingIOError:
+                        continue
+                    if veri:
+                        self.enjeksiyonu_isle(veri, adres)
                 elif sok is self.tcp_sok:
                     try:
                         veri = self.tcp_sok.recv(65535)
@@ -289,6 +339,7 @@ class KayitProxy:
                             self.udp_sok.sendto(veri, adres)
                         except OSError:
                             pass
+                    self._dinleyenlere_gonder(veri)
                     # Otopilot adresini src olarak yaz
                     self._paketleri_coz(
                         self._mav_uav, veri, "uav2gcs", self.host, self.tcp_port
@@ -313,7 +364,7 @@ class KayitProxy:
         ortak.log("Kapanıyor; kalan tampon yazılıyor...", "BILGI")
         self.tamponu_yaz()
         self.meta_guncelle_kapanis()
-        for s in (self.udp_sok, self.tcp_sok):
+        for s in (self.udp_sok, self.enjeksiyon_sok, self.tcp_sok):
             try:
                 if s:
                     s.close()

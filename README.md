@@ -183,6 +183,24 @@ Veri birleştirme: [belgeler/VERI_PAYLASIMI.md](belgeler/VERI_PAYLASIMI.md).
 
 ---
 
+## Saldırı yönleri
+
+Kayıttaki yön duvarın gözündendir: Paket hedefine göre değil, duvarın onu nereden
+gördüğüne göre yazılır; telsizden gelen her paket `gcs2uav`'dir.
+
+| Saldırı | Hedef | Giriş portu | SITL'ye iletilir mi | Kayıttaki yön |
+|---------|-------|-------------|---------------------|---------------|
+| `spoof_cmd` | Uçak | 14550 | Evet | `gcs2uav` |
+| `impersonation` | Uçak | 14550 | Evet | `gcs2uav` |
+| `replay` | Uçak | 14550 | Evet | `gcs2uav` |
+| `flood` | Uçak | 14550 | Evet | `gcs2uav` |
+| `fake_telemetry` | Yer istasyonu | 14551 | **Hayır** | `gcs2uav` |
+
+Ayrıntı: [belgeler/VERI_SEMASI.md](belgeler/VERI_SEMASI.md),
+[belgeler/MIMARI.md](belgeler/MIMARI.md).
+
+---
+
 ## Etik ve kapsam
 
 - **Saldırı betikleri yalnızca `127.0.0.1` (localhost) hedefine bağlanır.** Bu

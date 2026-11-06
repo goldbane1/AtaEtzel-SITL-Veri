@@ -9,6 +9,7 @@ Bir uçuş için şunları denetler ve Türkçe TAMAM/EKSİK raporlar:
   - meta.json var ve dolu mu
   - saldırılıysa: ground_truth.json var mı ve etiketlerle tutarlı mı
     (saldırı aralığında gerçekten saldırı etiketli paket var mı)
+  - fake_telemetry uçuşunda: saldırı paketleri gcs2uav yönünde ve uçağın sysid'iyle mi
   - pencereler çıkarıldıysa: uçuşun pencereleri kesintisiz ve süreyle uyumlu mu
 
 Kullanım:
@@ -52,6 +53,21 @@ def pencere_sorunlari(pencereler: "pd.DataFrame", paketler: "pd.DataFrame") -> l
         sorunlar.append(f"pencere sayısı {len(pencereler)}, beklenen {beklenen}")
     if int(baslangiclar.iloc[0]) != t0:
         sorunlar.append("ilk pencere ilk paketle başlamıyor")
+    return sorunlar
+
+
+def fake_telemetry_sorunlari(paketler: "pd.DataFrame") -> list[str]:
+    """Sahte telemetri paketlerinin duvarın gözünden doğru kaydedildiğini denetler."""
+    saldiri = paketler[paketler["label"] == "fake_telemetry"]
+    if saldiri.empty:
+        return []
+    sorunlar: list[str] = []
+    if (saldiri["direction"] != "gcs2uav").any():
+        sorunlar.append("fake_telemetry paketleri gcs2uav yönünde değil")
+    ucak = paketler[(paketler["direction"] == "uav2gcs")
+                    & (paketler["msgname"] == "HEARTBEAT")]["sysid"]
+    if not ucak.empty and (saldiri["sysid"] != int(ucak.mode().iloc[0])).any():
+        sorunlar.append("fake_telemetry paketleri uçağın sysid'ini taşımıyor")
     return sorunlar
 
 
@@ -107,6 +123,9 @@ def bir_ucus_dogrula(ucus_id: str, cfg: dict) -> bool:
                     sorunlar.append(
                         f"'{tur}' saldırı aralığında etiketli paket yok"
                     )
+
+    if df is not None and "label" in df.columns:
+        sorunlar.extend(fake_telemetry_sorunlari(df))
 
     # Pencereler (oznitelik.py çalıştırıldıysa)
     pencere_yolu = ortak.repo_koku() / "veri" / "oznitelikler" / "pencereler.parquet"
