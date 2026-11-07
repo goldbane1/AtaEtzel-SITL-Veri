@@ -54,8 +54,8 @@ verilmemişse asistan görevi yapmadan önce kullanıcıya sorar.
 | # | Karar | Etkilediği görev | Durum |
 |---|-------|------------------|-------|
 | K1 | **Duvar sahte telemetriyi görebiliyor mu?** Evet: Telsiz kanalı paylaşılan ortamdır, uçak telsizi menzildeyse paketi alıp duvara iletir (`MIMARI.md`, telsiz kanalı varsayımı). Paket duvarın gözünden `gcs2uav` kaydedilir | G4, G7, G8 | **Karar verildi** (2026-11-06) |
-| K2 | **Ekip ve makine sayısı.** Ekip 4 kişi, 5 makine: Batuhan'ın 2 makinesi ve 3 arkadaşın laptopu (Ubuntu 26.04) | G8, `UCUS_NUMARALARI.md` | **Karar verildi** (2026-11-07) |
-| K3 | **Numara bloğu.** Her makine kendi `pc_id`'sini alır (`pc1`–`pc5`), her biri yüzlük blok: 500 numara. Kod değişikliği gerekmez. Makine başına 60 uçuş planlanır, 40 numara yedek kalır | G6.5, G8 | **Karar verildi** (2026-11-07) |
+| K2 | **Ekip ve makine sayısı.** Ekip 4 kişi, 5 makine: Batuhan'ın 2 makinesi ile Şeyma, Hasan ve Yusuf'un laptopları (Ubuntu 26.04) | G8, `UCUS_NUMARALARI.md` | **Karar verildi** (2026-11-07) |
+| K3 | **Numara bloğu.** Her makine kendi `pc_id`'sini alır: `pc1` Batuhan masaüstü, `pc2` Şeyma, `pc3` Hasan, `pc4` Yusuf, `pc5` Batuhan laptop. Her biri yüzlük blok, toplam 500 numara. Kod değişikliği gerekmez. Makine başına 60 uçuş planlanır, 40 numara yedek kalır | G6.5, G8 | **Karar verildi** (2026-11-07) |
 
 ---
 
@@ -688,8 +688,9 @@ tamamlanmış sayılamaz.
 
 - Üç 26.04 laptopta kurulum ve küçük deneme çalıştırması (`--normal 1 --saldirili 1`).
   Derleme bu sürümde denenmedi; G8'in makine sayısı buna bağlıdır.
-- Her makinede `pc_id` ve aralığı `UCUS_NUMARALARI.md` tablosuna göre ayarla.
-- Test uçuşlarını silme kararını ver: Veri setine girmemeli.
+- Deneme geçince `veri-duzeltmeleri`'ni `main`'e birleştir; herkes aynı commit'ten üretsin.
+- Her makinede `pc_id` ve aralığı `UCUS_NUMARALARI.md` tablosuna göre ayarla. Masaüstündeki
+  test uçuşları 2026-11-07'de silindi; diğer makinelerde test uçuşu varsa birleştirmeye alınmaz.
 - Hedef hacmi üret (başlangıç önerisi, başlamadan kullanıcıyla kesinleştirilir):
 
   | Uçuş türü | Adet |

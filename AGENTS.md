@@ -144,12 +144,12 @@ Ekip 4 kişi, 5 makinedir; uçuş numaraları çakışmasın diye her makinenin 
 | pc_id | Uçuş aralığı | Makine |
 |-------|--------------|--------|
 | pc1 | F100–F199 | Batuhan masaüstü — Pop!_OS 24.04 (noble tabanlı) |
-| pc2 | F200–F299 | Batuhan laptop |
-| pc3 | F300–F399 | 1. arkadaş laptop — Ubuntu 26.04 |
-| pc4 | F400–F499 | 2. arkadaş laptop — Ubuntu 26.04 |
-| pc5 | F500–F599 | 3. arkadaş laptop — Ubuntu 26.04 |
+| pc2 | F200–F299 | Şeyma laptop — Ubuntu 26.04 |
+| pc3 | F300–F399 | Hasan laptop — Ubuntu 26.04 |
+| pc4 | F400–F499 | Yusuf laptop — Ubuntu 26.04 |
+| pc5 | F500–F599 | Batuhan laptop |
 
-Üç laptop Ubuntu **26.04**'tür. `setup.sh` 22.04 ve sonrasındaki her
+Şeyma, Hasan ve Yusuf'un laptopları Ubuntu **26.04**'tür. `setup.sh` 22.04 ve sonrasındaki her
 Ubuntu'da devam eder, ama 26.04'te Plane-4.7.2 derlemesi henüz denenmedi
 (README'deki "Ubuntu 26.04 hakkında" notu). 26.04'te kurulum/derleme hatası
 çıkarsa çözümü `belgeler/SORUN_GIDERME.md`'ye ve README notuna işle.
@@ -161,7 +161,7 @@ ve README'yi güncelle).
 
 - Bir oturumun başında `config.yaml`'daki `pc_id` ve `ucus_no_araligi`'nın
   kullanıcının o anki cihazıyla uyuştuğunu kullanıcıya sorarak doğrula.
-  Batuhan'ın iki makinesi ayrı `pc_id` kullanır: masaüstü `pc1`, laptop `pc2`.
+  Batuhan'ın iki makinesi ayrı `pc_id` kullanır: masaüstü `pc1`, laptop `pc5`.
 - Uçuş komutu önerirken numarayı uydurma: `python betikler/ortak.py --sonraki <tür>`
   ile sıradaki boş adı al.
 - Çakışma koruması `ortak.py` içindedir (`config_aralik_dogrula`,

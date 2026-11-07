@@ -168,10 +168,10 @@ makine `config.yaml`'da yalnızca `pc_id` ve `ucus_no_araligi`'nı ayarlar.
 | `pc_id` | Makine | `ucus_no_araligi` | Kullanacağı adlar | Toplu üretim ana tohumu |
 |---------|--------|-------------------|-------------------|-------------------------|
 | `pc1` | Batuhan masaüstü (Pop!_OS 24.04) | `[100, 199]` | F100 … F199 | 101 |
-| `pc2` | Batuhan laptop | `[200, 299]` | F200 … F299 | 102 |
-| `pc3` | 1. arkadaş laptop (Ubuntu 26.04) | `[300, 399]` | F300 … F399 | 103 |
-| `pc4` | 2. arkadaş laptop (Ubuntu 26.04) | `[400, 499]` | F400 … F499 | 104 |
-| `pc5` | 3. arkadaş laptop (Ubuntu 26.04) | `[500, 599]` | F500 … F599 | 105 |
+| `pc2` | Şeyma laptop (Ubuntu 26.04) | `[200, 299]` | F200 … F299 | 102 |
+| `pc3` | Hasan laptop (Ubuntu 26.04) | `[300, 399]` | F300 … F399 | 103 |
+| `pc4` | Yusuf laptop (Ubuntu 26.04) | `[400, 499]` | F400 … F499 | 104 |
+| `pc5` | Batuhan laptop | `[500, 599]` | F500 … F599 | 105 |
 
 - Sıradaki boş adı öğrenmek için: `python betikler/ortak.py --sonraki normal`
 - Üretim betikleri yanlış/kullanılmış bir numarada **hiçbir şey başlatmadan

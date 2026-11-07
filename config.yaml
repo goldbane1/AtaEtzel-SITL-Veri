@@ -7,10 +7,10 @@
 #
 # Makine düzeni (uçuş numarası çakışmasını önler; her makinenin kendi pc_id'si vardır):
 #   pc1 -> F100-F199   (ucus_no_araligi: [100, 199])   Batuhan masaüstü
-#   pc2 -> F200-F299   (ucus_no_araligi: [200, 299])   Batuhan laptop
-#   pc3 -> F300-F399   (ucus_no_araligi: [300, 399])   1. arkadaş laptop
-#   pc4 -> F400-F499   (ucus_no_araligi: [400, 499])   2. arkadaş laptop
-#   pc5 -> F500-F599   (ucus_no_araligi: [500, 599])   3. arkadaş laptop
+#   pc2 -> F200-F299   (ucus_no_araligi: [200, 299])   Şeyma laptop
+#   pc3 -> F300-F399   (ucus_no_araligi: [300, 399])   Hasan laptop
+#   pc4 -> F400-F499   (ucus_no_araligi: [400, 499])   Yusuf laptop
+#   pc5 -> F500-F599   (ucus_no_araligi: [500, 599])   Batuhan laptop
 # =====================================================================
 
 # Bu makinenin kimliği. Seçenekler: pc1, pc2, pc3, pc4, pc5.
