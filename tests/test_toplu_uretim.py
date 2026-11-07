@@ -189,3 +189,15 @@ def test_uyku_engeli_alinamazsa_uretim_durmaz(monkeypatch, capsys):
     assert toplu_uretim.uyku_engelle() is None
     assert "uykuya geçmediğinden" in capsys.readouterr().out
     toplu_uretim.uyku_serbest_birak(None)
+
+
+@pytest.mark.parametrize("no", [1, 2, 3, 4, 5])
+def test_bes_makinenin_bloklari_gecerli(no):
+    alt, ust = no * 100, no * 100 + 99
+    assert ortak.config_aralik_dogrula(
+        {"pc_id": f"pc{no}", "ucus_no_araligi": [alt, ust]}) == (alt, ust)
+
+
+def test_makine_baska_makinenin_blogunu_kullanamaz():
+    with pytest.raises(SystemExit):
+        ortak.config_aralik_dogrula({"pc_id": "pc4", "ucus_no_araligi": [500, 599]})

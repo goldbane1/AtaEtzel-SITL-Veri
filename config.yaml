@@ -3,20 +3,22 @@
 # ---------------------------------------------------------------------
 # Bu dosya, tüm betiklerin ortak ayarlarını tutar. Her kişi KENDİ
 # makinesinde yalnızca "pc_id" ve "ucus_no_araligi" alanlarını
-# değiştirir; geri kalanı üç bilgisayarda da AYNI kalmalıdır.
+# değiştirir; geri kalanı tüm makinelerde AYNI kalmalıdır.
 #
-# Üç bilgisayar düzeni (uçuş numarası çakışmasını önler):
-#   pc1 -> F100-F199   (ucus_no_araligi: [100, 199])
-#   pc2 -> F200-F299   (ucus_no_araligi: [200, 299])
-#   pc3 -> F300-F399   (ucus_no_araligi: [300, 399])
+# Makine düzeni (uçuş numarası çakışmasını önler; her makinenin kendi pc_id'si vardır):
+#   pc1 -> F100-F199   (ucus_no_araligi: [100, 199])   Batuhan masaüstü
+#   pc2 -> F200-F299   (ucus_no_araligi: [200, 299])   Batuhan laptop
+#   pc3 -> F300-F399   (ucus_no_araligi: [300, 399])   1. arkadaş laptop
+#   pc4 -> F400-F499   (ucus_no_araligi: [400, 499])   2. arkadaş laptop
+#   pc5 -> F500-F599   (ucus_no_araligi: [500, 599])   3. arkadaş laptop
 # =====================================================================
 
-# Bu makinenin kimliği. Seçenekler: pc1, pc2, pc3.
+# Bu makinenin kimliği. Seçenekler: pc1, pc2, pc3, pc4, pc5.
 # Dosya adları ve uçuş numaraları bu değere göre ayrışır.
 pc_id: pc1
 
 # Bu makineye ait uçuş numarası aralığı [alt, ust] (her ikisi de dahil).
-# pc1 için 100-199, pc2 için 200-299, pc3 için 300-399 olmalıdır.
+# pcN için N00-N99 olmalıdır (ör. pc4 için 400-499).
 ucus_no_araligi: [100, 199]
 
 # Simülasyonun çalıştığı ana makine. Her şey yerel (localhost) içindir.

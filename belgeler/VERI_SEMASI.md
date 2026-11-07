@@ -201,13 +201,14 @@ olarak verilmez** (veri sızıntısı):
 
 ## Pencere ve uçuş numarası (çakışmayı önler)
 
-| Bilgisayar | `pc_id` | Uçuş aralığı | Örnek |
-|-----------|---------|--------------|-------|
-| 1. PC | `pc1` | F100–F199 | `F101_normal` |
-| 2. PC | `pc2` | F200–F299 | `F205_spoof_cmd` |
-| 3. PC | `pc3` | F300–F399 | `F312_flood` |
+| Makine | `pc_id` | Uçuş aralığı | Örnek |
+|--------|---------|--------------|-------|
+| Batuhan masaüstü | `pc1` | F100–F199 | `F101_normal` |
+| Batuhan laptop | `pc2` | F200–F299 | `F205_spoof_cmd` |
+| 1. arkadaş laptop | `pc3` | F300–F399 | `F312_flood` |
+| 2. arkadaş laptop | `pc4` | F400–F499 | `F407_replay` |
+| 3. arkadaş laptop | `pc5` | F500–F599 | `F511_normal` |
 
-`pc_id` ve aralık `config.yaml`'da tutulur; her cihaz **ikisini birlikte**
-ayarlar. Aynı kişinin birden fazla cihazı varsa blok bölünür (ör. pc1 masaüstü
-`[100, 149]`, laptop `[150, 199]`). Kurallar ve otomatik kontroller:
+`pc_id` ve aralık `config.yaml`'da tutulur; her makine **ikisini birlikte**
+ayarlar. Kurallar ve otomatik kontroller:
 [UCUS_NUMARALARI.md](UCUS_NUMARALARI.md).

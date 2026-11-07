@@ -25,7 +25,7 @@
 
 ## 2. Neden bu kadar önemli?
 
-Üçümüz verileri **kendi bilgisayarımızda** üretiyoruz. Sonunda hepsi tek bir
+Herkes verileri **kendi bilgisayarında** üretiyor. Sonunda hepsi tek bir
 klasörde birleştirilecek ([VERI_PAYLASIMI.md](VERI_PAYLASIMI.md)):
 
 ```
@@ -90,28 +90,24 @@ Kurallar:
 
 ## 4. Kimin hangi aralığı var?
 
-| Kişi / cihaz | `pc_id` | `ucus_no_araligi` | Kullanacağı adlar |
-|--------------|---------|-------------------|-------------------|
-| Batuhan — masaüstü | `pc1` | `[100, 149]` | F100 … F149 |
-| Batuhan — laptop | `pc1` | `[150, 199]` | F150 … F199 |
-| 2. kişi | `pc2` | `[200, 299]` | F200 … F299 |
-| 3. kişi | `pc3` | `[300, 399]` | F300 … F399 |
+| `pc_id` | Makine | `ucus_no_araligi` | Kullanacağı adlar | Toplu üretim ana tohumu |
+|---------|--------|-------------------|-------------------|-------------------------|
+| `pc1` | Batuhan masaüstü (Pop!_OS 24.04) | `[100, 199]` | F100 … F199 | 101 |
+| `pc2` | Batuhan laptop | `[200, 299]` | F200 … F299 | 102 |
+| `pc3` | 1. arkadaş laptop (Ubuntu 26.04) | `[300, 399]` | F300 … F399 | 103 |
+| `pc4` | 2. arkadaş laptop (Ubuntu 26.04) | `[400, 499]` | F400 … F499 | 104 |
+| `pc5` | 3. arkadaş laptop (Ubuntu 26.04) | `[500, 599]` | F500 … F599 | 105 |
 
-- `pc_id` **kişiyi**, `ucus_no_araligi` **cihazı** ayırır.
-- Yüzlük blok `pc_id`'ye bağlıdır: `pc1` → 100–199, `pc2` → 200–299,
-  `pc3` → 300–399. Aralığın bu bloğun **içinde** olması zorunludur; betikler
-  bunu denetler.
-- Bir kişi **tek** cihaz kullanıyorsa bloğun tamamını alır (ör. `[200, 299]`).
-- Bir kişi **iki** cihaz kullanıyorsa bloğu **ikiye böler** (yukarıdaki
-  Batuhan örneği gibi). Üç cihaz olursa üçe böler: `[100,133]`, `[134,166]`,
-  `[167,199]`. Önemli olan iki cihazın aralığının **hiç örtüşmemesi**.
-- Tablo değişirse (ör. 2. kişi de laptop eklerse) **bu tabloyu güncelleyin**
-  ve ekibe haber verin; tablo tek doğru kaynaktır.
+- Ekip 4 kişi, 5 makinedir. `pc_id` **kişiyi değil cihazı** gösterir: Her makinenin kendi
+  `pc_id`'si ve kendi yüzlük bloğu vardır. Aynı kişinin iki makinesi de ayrı `pc_id` alır.
+- Yüzlük blok `pc_id`'den gelir: `pcN` → N×100 ile N×100+99 arası. Aralığın bu bloğun
+  **içinde** olması zorunludur; betikler bunu denetler.
+- Yeni makine eklenirse sıradaki `pc_id` verilir (`pc6` → 600–699). Numaraları bölmeye gerek yok.
+- Tablo değişirse **bu tabloyu güncelleyin** ve ekibe haber verin; tablo tek doğru kaynaktır.
+- Ana tohum her makinede farklı olmalıdır: Aynı tohum aynı uçuş planını üretir.
 
-> Neden 100 numara? Planlanan veri seti kişi başı birkaç düzine uçuştur;
-> 100 fazlasıyla yeter. Aralık dolarsa betik Türkçe uyarır, ekip birlikte
-> yeni blok kararlaştırır (ör. pc1 → 400–499 ek blok). Kendi başınıza başka
-> bloğa geçmeyin.
+> Neden 100 numara? Plan makine başına 60 uçuştur (toplam 300); kalan 40 numara başarısız
+> uçuşlara yeter. Aralık dolarsa betik Türkçe uyarır. Kendi başınıza başka bloğa geçmeyin.
 
 ---
 
@@ -166,7 +162,7 @@ bash betikler/normal_uretim.sh F203_normal gorevler/gorev1_dikdortgen.waypoints 
 ```
 
 > 📌 Belgelerdeki örnek komutlar (`F101_normal`, `F106_spoof_cmd` …) **pc1
-> numaralarıdır**. pc2/pc3 iseniz aynen kopyalamayın; numarayı kendi
+> numaralarıdır**. Başka makinedeyseniz aynen kopyalamayın; numarayı kendi
 > aralığınızdan seçin. Yanlışlıkla kopyalarsanız betik zaten durdurur.
 
 Bir adın uygun olup olmadığını önceden denemek isterseniz:
@@ -223,15 +219,15 @@ sorun değildir. **Emin değilseniz silmeyin, yeni numara alın.**
 Doğru davranış bu: betik eski uçuşunuzu korudu. Mesajdaki sıradaki boş adı
 kullanın.
 
-**Laptopta da üretim yapacağım.**
-Laptopta `config.yaml`'a **farklı** bir aralık yazın (4. bölüm, bloğu
-bölün). Aynı `pc_id`, farklı aralık.
+**Yeni bir makinede de üretim yapacağım.**
+O makineye 4. bölümdeki tablodan kendi `pc_id`'sini verin. Aynı `pc_id` iki makinede
+kullanılmaz.
 
 **Bilgisayarımı değiştirdim / repoyu yeniden klonladım.**
 Yeni klonda `veri/ucuslar/` boştur (veri git'te yok), betik bu yüzden yeniden
 F100'den başlamak isteyebilir. Eski cihazdaki uçuşları ya yeni cihaza kopyalayın
 ya da ortak klasörde kullanılmış son numaraya bakıp `config.yaml`'daki aralığın
-alt sınırını onun bir fazlasına çekin (ör. `[118, 149]`).
+alt sınırını onun bir fazlasına çekin (ör. `[118, 199]`).
 
 **`replay` saldırısı için kaynak uçuş başka birine ait.**
 `--kaynak-ucus` olarak **kendi** bilgisayarınızdaki bir normal uçuşu verin.

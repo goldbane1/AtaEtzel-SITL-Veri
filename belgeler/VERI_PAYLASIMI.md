@@ -2,7 +2,7 @@
 
 > 🧭 **Aşama 5 / 5** · [Yol haritası](../README.md#yol-haritası--neyi-hangi-sırayla) · Önceki → [VERI_URETIMI.md](VERI_URETIMI.md)
 
-Üç bilgisayarda üretilen uçuşlar tek bir veri setinde birleştirilir. Ham veri
+Makinelerde üretilen uçuşlar tek bir veri setinde birleştirilir. Ham veri
 git'e **konmaz**; bu rehber nasıl paylaşılacağını anlatır.
 
 ## Neden git'e konmuyor?
@@ -23,16 +23,17 @@ Yanlışlıkla eklendiyse geçmişten temizlenmesi gerekir (ekibe/Claude Code'a 
 
 Her makine ayrı bir uçuş numarası aralığı kullanır:
 
-| Bilgisayar | `pc_id` | Aralık |
-|-----------|---------|--------|
-| 1. PC | `pc1` | F100–F199 |
-| 2. PC | `pc2` | F200–F299 |
-| 3. PC | `pc3` | F300–F399 |
+| Makine | `pc_id` | Aralık |
+|--------|---------|--------|
+| Batuhan masaüstü | `pc1` | F100–F199 |
+| Batuhan laptop | `pc2` | F200–F299 |
+| 1. arkadaş laptop | `pc3` | F300–F399 |
+| 2. arkadaş laptop | `pc4` | F400–F499 |
+| 3. arkadaş laptop | `pc5` | F500–F599 |
 
-Böylece `F101_normal` (pc1) ile `F201_normal` (pc2) çakışmaz. Her cihaz
-`config.yaml`'da kendi `pc_id` ve `ucus_no_araligi`'nı ayarlar; bir kişinin iki
-cihazı varsa blok bölünür. Tüm kurallar, otomatik kontroller ve sık durumlar:
-[UCUS_NUMARALARI.md](UCUS_NUMARALARI.md).
+Böylece `F101_normal` (`pc1`) ile `F201_normal` (`pc2`) çakışmaz. Her makine `config.yaml`'da
+kendi `pc_id` ve `ucus_no_araligi`'nı ayarlar. Tüm kurallar, otomatik kontroller ve sık
+durumlar: [UCUS_NUMARALARI.md](UCUS_NUMARALARI.md).
 
 ## Birleştirme yöntemi (önerilen)
 
@@ -66,7 +67,7 @@ cihazı varsa blok bölünür. Tüm kurallar, otomatik kontroller ve sık duruml
    python betikler/bol.py
    python betikler/dogrula.py --hepsi
    ```
-   Böylece `pencereler.parquet` ve `bolme.csv` üç makinenin verisini birlikte kapsar.
+   Böylece `pencereler.parquet` ve `bolme.csv` tüm makinelerin verisini birlikte kapsar.
 
 ## Örnek veri (`veri/ornek/`)
 

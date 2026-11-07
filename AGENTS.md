@@ -45,7 +45,7 @@ değerlendirilir: [`belgeler/MIMARI.md`](belgeler/MIMARI.md).
    `betikler/ortak.py` içindeki `localhost_mu` / `localhost_dogrula` kontrolü
    **silinmez, gevşetilmez, atlanmaz**. Dış ağa veya gerçek araca saldıran kod
    yazılmaz. Bu bir savunma projesidir.
-2. **ArduPlane sürümü sabit: `Plane-4.7.2`.** Üç makinede aynı etiket olmalı;
+2. **ArduPlane sürümü sabit: `Plane-4.7.2`.** Tüm makinelerde aynı etiket olmalı;
    sürüm yükseltme önerme.
 3. **Ham veri git'e girmez:** `*.parquet`, `*.tlog`, `*.BIN`, `veri/ucuslar/`,
    `veri/oznitelikler/` (`.gitignore`'da). İstisna: `veri/ornek/` altındaki
@@ -60,7 +60,7 @@ değerlendirilir: [`belgeler/MIMARI.md`](belgeler/MIMARI.md).
 6. **Veri sızıntısı:** `src_ip`, `src_port`, `raw_hex` **asla öznitelik
    olmaz** (`oznitelik.py`'ye eklenmez). Yalnızca etiketleme ve replay içindir.
 7. `config.yaml`'da her makine yalnızca `pc_id` ve `ucus_no_araligi`'nı
-   değiştirir; diğer alanlar üç makinede aynı kalır.
+   değiştirir; diğer alanlar tüm makinelerde aynı kalır.
 
 ## 4. Mimari (kısaca)
 
@@ -139,15 +139,17 @@ kontrol için: `python -m py_compile betikler/*.py betikler/saldirilar/*.py` ve
 
 ## 7. Ekip ve makineler
 
-Üç kişi paralel üretir; uçuş numaraları çakışmasın diye:
+Ekip 4 kişi, 5 makinedir; uçuş numaraları çakışmasın diye her makinenin kendi `pc_id`'si vardır:
 
-| pc_id | Uçuş aralığı | Örnek | Not |
-|-------|--------------|-------|-----|
-| pc1 | F100–F199 | `F101_normal` | Batuhan — masaüstü Pop!_OS 24.04 (noble tabanlı) + laptop |
-| pc2 | F200–F299 | `F205_spoof_cmd` | Ekip arkadaşı — Ubuntu (sürüm kesinleşmedi) |
-| pc3 | F300–F399 | `F312_flood` | Ekip arkadaşı — Ubuntu (sürüm kesinleşmedi) |
+| pc_id | Uçuş aralığı | Makine |
+|-------|--------------|--------|
+| pc1 | F100–F199 | Batuhan masaüstü — Pop!_OS 24.04 (noble tabanlı) |
+| pc2 | F200–F299 | Batuhan laptop |
+| pc3 | F300–F399 | 1. arkadaş laptop — Ubuntu 26.04 |
+| pc4 | F400–F499 | 2. arkadaş laptop — Ubuntu 26.04 |
+| pc5 | F500–F599 | 3. arkadaş laptop — Ubuntu 26.04 |
 
-Ekipte Ubuntu **26.04** kullanan da var. `setup.sh` 22.04 ve sonrasındaki her
+Üç laptop Ubuntu **26.04**'tür. `setup.sh` 22.04 ve sonrasındaki her
 Ubuntu'da devam eder, ama 26.04'te Plane-4.7.2 derlemesi henüz denenmedi
 (README'deki "Ubuntu 26.04 hakkında" notu). 26.04'te kurulum/derleme hatası
 çıkarsa çözümü `belgeler/SORUN_GIDERME.md`'ye ve README notuna işle.
@@ -159,7 +161,7 @@ ve README'yi güncelle).
 
 - Bir oturumun başında `config.yaml`'daki `pc_id` ve `ucus_no_araligi`'nın
   kullanıcının o anki cihazıyla uyuştuğunu kullanıcıya sorarak doğrula.
-  Batuhan'ın iki cihazı bloğu böler: masaüstü `[100, 149]`, laptop `[150, 199]`.
+  Batuhan'ın iki makinesi ayrı `pc_id` kullanır: masaüstü `pc1`, laptop `pc2`.
 - Uçuş komutu önerirken numarayı uydurma: `python betikler/ortak.py --sonraki <tür>`
   ile sıradaki boş adı al.
 - Çakışma koruması `ortak.py` içindedir (`config_aralik_dogrula`,

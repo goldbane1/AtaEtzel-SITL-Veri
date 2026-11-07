@@ -54,8 +54,8 @@ verilmemişse asistan görevi yapmadan önce kullanıcıya sorar.
 | # | Karar | Etkilediği görev | Durum |
 |---|-------|------------------|-------|
 | K1 | **Duvar sahte telemetriyi görebiliyor mu?** Evet: Telsiz kanalı paylaşılan ortamdır, uçak telsizi menzildeyse paketi alıp duvara iletir (`MIMARI.md`, telsiz kanalı varsayımı). Paket duvarın gözünden `gcs2uav` kaydedilir | G4, G7, G8 | **Karar verildi** (2026-11-06) |
-| K2 | **Ekip ve makine sayısı.** `MIMARI.md` iki kişi diyor; repo "üç kişi, üç makine" diyor. Üçüncü makine kimde, `pc3` kullanılacak mı? | G8, `UCUS_NUMARALARI.md` | Bekliyor |
-| K3 | **Numara bloğu.** G8'in öneri hacmi (300 uçuş) üç yüzlük bloğu başarısız uçuşlara pay bırakmadan tam doldurur. `pc_blogu()` yüzlük bloğa sabit olduğu için ek blok kod değişikliği ister | G6.5, G8 | Bekliyor |
+| K2 | **Ekip ve makine sayısı.** Ekip 4 kişi, 5 makine: Batuhan'ın 2 makinesi ve 3 arkadaşın laptopu (Ubuntu 26.04) | G8, `UCUS_NUMARALARI.md` | **Karar verildi** (2026-11-07) |
+| K3 | **Numara bloğu.** Her makine kendi `pc_id`'sini alır (`pc1`–`pc5`), her biri yüzlük blok: 500 numara. Kod değişikliği gerekmez. Makine başına 60 uçuş planlanır, 40 numara yedek kalır | G6.5, G8 | **Karar verildi** (2026-11-07) |
 
 ---
 
@@ -542,7 +542,7 @@ boyu çalışabilmeli; başarısız bir uçuş tüm geceyi yakmamalı.
 **Dikkat:**
 
 - **Numara kapasitesi:** Uçuş başı ~5 dk ile 8 saatlik gece ~95 uçuş eder; masaüstü
-  aralığı `[100, 149]` 50 uçuşta dolar. Bkz. açık karar K3.
+  aralığı 50 uçuşta dolabilirdi; K3 ile makine başına 100 numara oldu.
 - **Yeniden başlatma:** Ön tercih SITL'yi yeniden başlatmak (rüzgâr, EKF ve görev
   durumu temiz başlar). Bu durumda toplu betik SITL'yi kendisi başlatıp kapatmalı.
   Kesin seçim ve gerekçe görev sırasında yazılır.
@@ -583,7 +583,7 @@ Saldırı imzaları (saldırı içi / dışı, pencere ortalaması): `spoof_cmd`
 
 Çalıştırmalarda bulunan iki hata düzeltildi: `agir` kanalda telemetri isteği kaybolunca uçak
 1 Hz'te kalıp `meta.json` yanlış oluyordu (istek 3 kez gönderiliyor, doğrulandı); gecikmeli son
-saldırı paketleri `normal` etiketleniyordu (etikette 1 sn pay). K3 hâlâ açık.
+saldırı paketleri `normal` etiketleniyordu (etikette 1 sn pay).
 
 ---
 
@@ -686,7 +686,10 @@ tamamlanmış sayılamaz.
 
 **Yapılacaklar:**
 
-- Açık kararlar K2 ve K3'ü sonuçlandır, `UCUS_NUMARALARI.md`'yi güncelle.
+- Üç 26.04 laptopta kurulum ve küçük deneme çalıştırması (`--normal 1 --saldirili 1`).
+  Derleme bu sürümde denenmedi; G8'in makine sayısı buna bağlıdır.
+- Her makinede `pc_id` ve aralığı `UCUS_NUMARALARI.md` tablosuna göre ayarla.
+- Test uçuşlarını silme kararını ver: Veri setine girmemeli.
 - Hedef hacmi üret (başlangıç önerisi, başlamadan kullanıcıyla kesinleştirilir):
 
   | Uçuş türü | Adet |
@@ -695,7 +698,7 @@ tamamlanmış sayılamaz.
   | Her saldırı türü | 30 (toplam 150) |
 
   Her tür profillere dengeli dağılır (`temiz`, `hafif`, `orta`, `agir`). Uçuş başı
-  ~5 dk ile toplam ~25 makine saatidir.
+  ~4,5 dk ile toplam ~22,5 makine saatidir; 5 makinede makine başına 60 uçuş, ~4,5 saat.
 - Tüm makinelerde `Plane-4.7.2` ve aynı repo commit'i kullanıldığını doğrula.
 - Verileri `VERI_PAYLASIMI.md`'ye göre birleştir; numara tekrarı denetimini çalıştır.
 - Birleştirme makinesinde `etiketle` → `oznitelik` → `bol` → `dogrula`.
@@ -715,6 +718,6 @@ zamanlamasını öğrenebilir; uçuşlar makinelere dengeli dağıtılmalıdır.
 - Rapor hazır; ham veri git'e girmedi.
 
 **Etkilenen dosyalar:** `belgeler/UCUS_NUMARALARI.md`, `belgeler/VERI_PAYLASIMI.md`,
-gerekirse `betikler/ortak.py` (K3) ve rapor belgesi (yeni, yeri görevde belirlenir)
+ve rapor belgesi (yeni, yeri görevde belirlenir)
 
 **Sonuç:** —

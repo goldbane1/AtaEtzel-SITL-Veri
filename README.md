@@ -23,7 +23,7 @@ geçmeyin. Her aşamada okunacak belge ve çalıştırılacak komut aşağıda.
 | 2 | **Sağlık kontrolü** | Kurulum eksiksiz mi, doğrular | [KURULUM.md](belgeler/KURULUM.md) | `python betikler/kontrol.py` |
 | 3 | **Veri üretimi** | Normal + saldırılı uçuşlar üretir | [VERI_URETIMI.md](belgeler/VERI_URETIMI.md) | `normal_uretim.sh` / `saldiri_uret.sh` |
 | 4 | **İşleme** | Etiketler, öznitelik çıkarır, böler, doğrular | [VERI_URETIMI.md](belgeler/VERI_URETIMI.md) | `etiketle → oznitelik → bol → dogrula` |
-| 5 | **Paylaşım** | Üç makinenin verisini birleştirir | [VERI_PAYLASIMI.md](belgeler/VERI_PAYLASIMI.md) | — |
+| 5 | **Paylaşım** | Makinelerin verisini birleştirir | [VERI_PAYLASIMI.md](belgeler/VERI_PAYLASIMI.md) | — |
 
 **Her an başvurulabilecek (sıralı değil) belgeler:**
 
@@ -155,28 +155,28 @@ setup.sh            Baştan sona kurulum
 
 ---
 
-## Üç bilgisayar düzeni ve uçuş numaraları
+## Makine düzeni ve uçuş numaraları
 
 > ⚠️ **Üretime başlamadan önce herkes okusun:**
 > [belgeler/UCUS_NUMARALARI.md](belgeler/UCUS_NUMARALARI.md). Uçuş numarası
 > çakışırsa veriler birleştirilirken bir uçuş **sessizce kaybolur**.
 
 Her uçuşun adı `F<numara>_<tür>` biçimindedir ve **numara tüm ekipte bir kez**
-kullanılır. Bunun için her kişiye bir yüzlük blok, her **cihaza** bu blok içinde
-ayrı bir aralık verilir. Her cihaz `config.yaml`'da yalnızca `pc_id` ve
-`ucus_no_araligi`'nı ayarlar.
+kullanılır. Bunun için her **makineye** ayrı bir `pc_id` ve yüzlük blok verilir. Her
+makine `config.yaml`'da yalnızca `pc_id` ve `ucus_no_araligi`'nı ayarlar.
 
-| Kişi / cihaz | `pc_id` | `ucus_no_araligi` | Örnek |
-|--------------|---------|-------------------|-------|
-| Batuhan — masaüstü | `pc1` | `[100, 149]` | `F101_normal` |
-| Batuhan — laptop | `pc1` | `[150, 199]` | `F151_flood` |
-| 2. kişi | `pc2` | `[200, 299]` | `F205_spoof_cmd` |
-| 3. kişi | `pc3` | `[300, 399]` | `F312_flood` |
+| `pc_id` | Makine | `ucus_no_araligi` | Kullanacağı adlar | Toplu üretim ana tohumu |
+|---------|--------|-------------------|-------------------|-------------------------|
+| `pc1` | Batuhan masaüstü (Pop!_OS 24.04) | `[100, 199]` | F100 … F199 | 101 |
+| `pc2` | Batuhan laptop | `[200, 299]` | F200 … F299 | 102 |
+| `pc3` | 1. arkadaş laptop (Ubuntu 26.04) | `[300, 399]` | F300 … F399 | 103 |
+| `pc4` | 2. arkadaş laptop (Ubuntu 26.04) | `[400, 499]` | F400 … F499 | 104 |
+| `pc5` | 3. arkadaş laptop (Ubuntu 26.04) | `[500, 599]` | F500 … F599 | 105 |
 
 - Sıradaki boş adı öğrenmek için: `python betikler/ortak.py --sonraki normal`
 - Üretim betikleri yanlış/kullanılmış bir numarada **hiçbir şey başlatmadan
   durur** ve doğru adı söyler.
-- Belgelerdeki örnek komutlar pc1 numaralarıyla yazılmıştır; pc2/pc3 kendi
+- Belgelerdeki örnek komutlar `pc1` numaralarıyla yazılmıştır; diğer makineler kendi
   numarasını kullanır.
 
 Veri birleştirme: [belgeler/VERI_PAYLASIMI.md](belgeler/VERI_PAYLASIMI.md).
@@ -214,7 +214,7 @@ Ayrıntı: [belgeler/VERI_SEMASI.md](belgeler/VERI_SEMASI.md),
 
 ## Sürüm ve tekrar üretilebilirlik
 
-- ArduPlane **Plane-4.7.2** (üç makinede de aynı). Farklı sürüm sonuçları tekrar
+- ArduPlane **Plane-4.7.2** (tüm makinelerde aynı). Farklı sürüm sonuçları tekrar
   üretilemez kılar.
 - `--speedup` **kullanılmaz**: paketler arası süreleri bozar; zamanlama
   öznitelikleri buna dayanır.

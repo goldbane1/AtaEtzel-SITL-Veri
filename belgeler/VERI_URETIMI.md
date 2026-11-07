@@ -178,7 +178,7 @@ UCUS_EK_ARG="--tohum 42 --telemetri-hz 8 --irtifa-farki-m 30" \
 | `F109_flood` | flood | gorev3 | `... flood 180 20 45 --hiz 300` |
 | `F110_fake_telemetry` | fake_telemetry | gorev4 | `... fake_telemetry 180 30 50 --sapma-m 500` |
 
-> `pc2`/`pc3` kullanıcıları aynı listeyi kendi aralıklarıyla üretir (F2xx / F3xx).
+> Diğer makineler aynı listeyi kendi aralıklarıyla üretir (F2xx … F5xx).
 
 ## İpuçları
 
