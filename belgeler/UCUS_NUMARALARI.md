@@ -106,7 +106,7 @@ Kurallar:
 - Tablo değişirse **bu tabloyu güncelleyin** ve ekibe haber verin; tablo tek doğru kaynaktır.
 - Ana tohum her makinede farklı olmalıdır: Aynı tohum aynı uçuş planını üretir.
 
-> Neden 100 numara? Plan makine başına 60 uçuştur (toplam 300); kalan 40 numara başarısız
+> Neden 100 numara? Plan makine başına 90 uçuştur (toplam 450); kalan 10 numara başarısız
 > uçuşlara yeter. Aralık dolarsa betik Türkçe uyarır. Kendi başınıza başka bloğa geçmeyin.
 
 ---

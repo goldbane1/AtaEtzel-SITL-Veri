@@ -55,7 +55,7 @@ verilmemişse asistan görevi yapmadan önce kullanıcıya sorar.
 |---|-------|------------------|-------|
 | K1 | **Duvar sahte telemetriyi görebiliyor mu?** Evet: Telsiz kanalı paylaşılan ortamdır, uçak telsizi menzildeyse paketi alıp duvara iletir (`MIMARI.md`, telsiz kanalı varsayımı). Paket duvarın gözünden `gcs2uav` kaydedilir | G4, G7, G8 | **Karar verildi** (2026-11-06) |
 | K2 | **Ekip ve makine sayısı.** Ekip 4 kişi, 5 makine: Batuhan'ın 2 makinesi ile Şeyma, Hasan ve Yusuf'un laptopları (Ubuntu 26.04) | G8, `UCUS_NUMARALARI.md` | **Karar verildi** (2026-11-07) |
-| K3 | **Numara bloğu.** Her makine kendi `pc_id`'sini alır: `pc1` Batuhan masaüstü, `pc2` Şeyma, `pc3` Hasan, `pc4` Yusuf, `pc5` Batuhan laptop. Her biri yüzlük blok, toplam 500 numara. Kod değişikliği gerekmez. Makine başına 60 uçuş planlanır, 40 numara yedek kalır | G6.5, G8 | **Karar verildi** (2026-11-07) |
+| K3 | **Numara bloğu.** Her makine kendi `pc_id`'sini alır: `pc1` Batuhan masaüstü, `pc2` Şeyma, `pc3` Hasan, `pc4` Yusuf, `pc5` Batuhan laptop. Her biri yüzlük blok, toplam 500 numara. Kod değişikliği gerekmez. Makine başına 90 uçuş planlanır, 10 numara yedek kalır | G6.5, G8 | **Karar verildi** (2026-11-07) |
 
 ---
 
@@ -697,14 +697,16 @@ tamamlanmış sayılamaz.
 
   | Uçuş türü | Adet |
   |-----------|------|
-  | Normal | 150 |
-  | Her saldırı türü | 30 (toplam 150) |
+  | Normal | 200 |
+  | Her saldırı türü | 50 (toplam 250) |
 
   Her tür profillere dengeli dağılır (`temiz`, `hafif`, `orta`, `agir`). Uçuş başı
-  ~4,5 dk ile toplam ~22,5 makine saatidir; 5 makinede makine başına 60 uçuş, ~4,5 saat.
+  ~4,6 dk ile toplam ~34,5 makine saatidir; 5 makinede makine başına 90 uçuş
+  (`--normal 40 --saldirili 50`), ~6,9 saat. Hacim 2026-11-08'de kesinleşti.
 - Tüm makinelerde `Plane-4.7.2` ve aynı repo commit'i kullanıldığını doğrula.
 - Verileri `VERI_PAYLASIMI.md`'ye göre birleştir; numara tekrarı denetimini çalıştır.
-- Birleştirme makinesinde `etiketle` → `oznitelik` → `bol` → `dogrula`.
+- Ekip makineleri yalnızca uçuşları üretir (`--no-isleme`) ve Batuhan'a gönderir.
+- Birleştirme makinesinde (Batuhan) `etiketle` → `oznitelik` → `bol` → `dogrula`.
 - Rapor: tür × profil dağılımı, başarısız uçuş oranı, toplam uçuş saati, pencere
   sayısı, etiket dağılımı.
 

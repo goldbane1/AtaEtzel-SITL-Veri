@@ -63,9 +63,12 @@ def test_saldiri_turleri_dengeli(adet):
     assert max(degerler) - min(degerler) <= 1
 
 
-def test_kanal_profilleri_dengeli():
-    sayim = Counter(u["kanal_profil"] for u in uretim_plani(10, 20, PROFILLER, 3))
-    assert max(sayim.values()) - min(sayim.values()) <= 1
+def test_kanal_profilleri_her_turun_icinde_dengeli():
+    plan = uretim_plani(10, 20, PROFILLER, 3)
+    for tur in ("normal", *SALDIRILAR):
+        sayim = Counter(u["kanal_profil"] for u in plan if u["tur"] == tur)
+        adetler = [sayim[p] for p in PROFILLER]
+        assert max(adetler) - min(adetler) <= 1, tur
 
 
 def test_spoof_cogunlukla_etkili_ve_varyantlar_gorulur():

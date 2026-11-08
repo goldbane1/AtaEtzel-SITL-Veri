@@ -106,8 +106,12 @@ def uretim_plani(normal: int, saldirili: int, profiller: list[str], ana_tohum: i
     """Uçuş planını üretir. Replay'in kaynağı olabilsin diye normal uçuşlar önce gelir."""
     rng = random.Random(ana_tohum)
     toplam = normal + saldirili
-    profil_dizisi = _dengeli_dizi(profiller, toplam, rng)
     saldiri_dizisi = _dengeli_dizi(SALDIRILAR, saldirili, rng) if saldirili else []
+    # Profiller her türün içinde dengeli dağıtılır. Aksi hâlde bir (tür, profil) çifti
+    # neredeyse boş kalır ve o senaryonun test kümesinde o saldırı hiç bulunmaz.
+    tur_profilleri = {s: _dengeli_dizi(profiller, saldiri_dizisi.count(s), rng) for s in SALDIRILAR}
+    profil_dizisi = _dengeli_dizi(profiller, normal, rng)
+    profil_dizisi += [tur_profilleri[s].pop() for s in saldiri_dizisi]
 
     plan: list[dict] = []
     for i in range(toplam):
