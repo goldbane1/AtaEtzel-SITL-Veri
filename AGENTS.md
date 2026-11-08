@@ -150,8 +150,8 @@ Ekip 4 kişi, 5 makinedir; uçuş numaraları çakışmasın diye her makinenin 
 | pc5 | F500–F599 | Batuhan laptop |
 
 Şeyma, Hasan ve Yusuf'un laptopları Ubuntu **26.04**'tür. `setup.sh` 22.04 ve sonrasındaki her
-Ubuntu'da devam eder, ama 26.04'te Plane-4.7.2 derlemesi henüz denenmedi
-(README'deki "Ubuntu 26.04 hakkında" notu). 26.04'te kurulum/derleme hatası
+Ubuntu'da devam eder; kurulum ve üretim denemesi 26.04'te geçti
+(`belgeler/UBUNTU_2604_KURULUM_SORUNU.md`). 26.04'te kurulum/derleme hatası
 çıkarsa çözümü `belgeler/SORUN_GIDERME.md`'ye ve README notuna işle.
 
 Uçuş adı biçimi: `F<numara>_<tür>` (tür: `normal` veya saldırı adı).

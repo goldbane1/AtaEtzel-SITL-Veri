@@ -66,21 +66,13 @@ Türkçe uyarı verip durur. ArduPlane sürümü (Plane-4.7.2) tüm makinelerde 
 olduğu sürece makinelerin farklı Ubuntu sürümünde olması üretilen veriyi
 etkilemez.
 
-> ⚠️ **Ubuntu 26.04 hakkında (henüz denenmedi):** `setup.sh` 26.04'te de
-> çalışacak şekilde ayarlandı, ancak bu sürümde **gerçek bir kurulum ve
-> derleme henüz yapılmadı**. Bilinen riskler:
->
-> - 26.04 daha yeni bir derleyici (GCC) ile gelir. Plane-4.7.2 bu derleyiciden
->   önce yayımlandığı için `./waf plane` adımında daha önce görülmemiş
->   uyarılar ya da hatalar çıkabilir.
-> - ArduPilot'un `install-prereqs-ubuntu.sh` betiği 26.04'ün kod adını
->   tanımazsa `setup.sh` durmaz, temel paketleri yedek adımla kurar. Ancak bu
->   durumda derlemenin ihtiyaç duyduğu bazı Python paketleri eksik kalabilir.
->
-> 26.04 kullanıyorsanız `bash setup.sh` çıktısının tamamını (özellikle
-> `[UYARI]`/`[HATA]` satırlarını) kaydedin ve hata çıkarsa ekiple paylaşın.
-> Çözüm bulununca bu not ve [SORUN_GIDERME.md](belgeler/SORUN_GIDERME.md)
-> güncellenecek. İşletim sistemini sonradan yükseltirseniz (ör. 24.04 → 26.04)
+> **Ubuntu 26.04 hakkında:** Kurulum ve küçük üretim denemesi ekibin 26.04
+> laptoplarında geçti (GCC 15.2, Python 3.14.4, Plane-4.7.2). ArduPilot'un
+> `install-prereqs-ubuntu.sh` betiği 26.04'ün kod adını tanımadığı için hata
+> verebilir; `setup.sh` bu durumda durmaz, derleme için gereken Python paketleri
+> `.venv`'den gelir. Ayrıntı:
+> [UBUNTU_2604_KURULUM_SORUNU.md](belgeler/UBUNTU_2604_KURULUM_SORUNU.md).
+> İşletim sistemini sonradan yükseltirseniz (ör. 24.04 → 26.04)
 > şu komutu yeniden çalıştırın:
 > `cd ~/ardupilot && Tools/environment_install/install-prereqs-ubuntu.sh -y`
 

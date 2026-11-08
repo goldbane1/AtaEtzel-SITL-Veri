@@ -687,8 +687,10 @@ tamamlanmış sayılamaz.
 **Yapılacaklar:**
 
 - Üç 26.04 laptopta kurulum ve küçük deneme çalıştırması (`--normal 1 --saldirili 1`).
-  Derleme bu sürümde denenmedi; G8'in makine sayısı buna bağlıdır.
+  **Yapıldı (2026-11-08):** Şeyma ve Hasan'ın logları incelendi (7/7 kontrol, 344 test, 2/2 uçuş);
+  Yusuf'un denemesinin geçtiğini kullanıcı bildirdi.
 - Deneme geçince `veri-duzeltmeleri`'ni `main`'e birleştir; herkes aynı commit'ten üretsin.
+  **Yapıldı (2026-11-08).**
 - Her makinede `pc_id` ve aralığı `UCUS_NUMARALARI.md` tablosuna göre ayarla. Masaüstündeki
   test uçuşları 2026-11-07'de silindi; diğer makinelerde test uçuşu varsa birleştirmeye alınmaz.
 - Hedef hacmi üret (başlangıç önerisi, başlamadan kullanıcıyla kesinleştirilir):
