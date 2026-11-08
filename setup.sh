@@ -10,11 +10,10 @@
 #   0) Dağıtım/sürüm kontrolü
 #   1) apt bağımlılıkları (git, python3, venv, build-essential vb.)
 #   2) ArduPilot'u Plane-4.7.2 etiketinde ~/ardupilot'a klonlar (varsa atlar)
-#   3) ArduPilot'un install-prereqs-ubuntu.sh betiğini çalıştırır
-#      (MAVProxy ve pymavlink'i sistem genelinde bu kurar). Başarısız olursa
-#      temel apt paketlerini yedek adım olarak ayrıca kurmayı dener.
-#   4) ./waf configure --board sitl && ./waf plane ile ArduPlane'i derler
-#   5) Bu repo için .venv oluşturup requirements.txt'i kurar
+#   3) Bu repo için .venv oluşturup requirements.txt'i kurar (waf için empy/pexpect dahil)
+#   4) ArduPilot'un install-prereqs-ubuntu.sh betiğini çalıştırır ve PATH'i ayarlar.
+#      Başarısız olursa temel apt paketlerini yedek adım olarak ayrıca kurmayı dener.
+#   5) ./waf configure --board sitl && ./waf plane ile ArduPlane'i derler
 #   6) Özet basar
 #
 # Her adımda Türkçe ilerleme mesajı verir; bir adım başarısız olursa
@@ -99,7 +98,8 @@ bilgi "1/6 apt bağımlılıkları kuruluyor (sudo gerekebilir)..."
 sudo apt-get update
 sudo apt-get install -y \
   git python3 python3-pip python3-venv python3-dev \
-  build-essential ccache rsync
+  build-essential ccache rsync gawk libtool-bin \
+  libxml2-dev libxslt1-dev python3-pexpect
 tamam "apt bağımlılıkları kuruldu."
 
 bilgi "2/6 ArduPilot (${ARDUPILOT_ETIKET}) hazırlanıyor..."
@@ -117,10 +117,22 @@ echo "       Submodule'ler güncelleniyor..."
 git submodule update --init --recursive
 tamam "ArduPilot ${ARDUPILOT_ETIKET} hazır."
 
-bilgi "3/6 ArduPilot ön gereksinimleri kuruluyor (MAVProxy, pymavlink)..."
-# Desteklenen Ubuntu kararını ArduPilot'un kendi betiği verir. Betik kod
-# adını tanımazsa (ör. çok yeni bir sürüm) hata verebilir; bu durumda
-# kurulum DURMAZ, aşağıdaki yedek adım temel paketleri ayrıca kurar.
+bilgi "3/6 Repo sanal ortamı (.venv) oluşturuluyor (derleme ve betik bağımlılıkları)..."
+cd "$REPO_KOK"
+if [[ ! -d ".venv" ]]; then
+  python3 -m venv .venv
+fi
+# shellcheck disable=SC1091
+source "$REPO_KOK/.venv/bin/activate"
+pip install --upgrade pip
+pip install -r requirements.txt
+tamam "Sanal ortam ve Python bağımlılıkları kuruldu."
+
+bilgi "4/6 ArduPilot ön gereksinimleri ve PATH ayarlanıyor..."
+cd "$ARDUPILOT_DIZIN"
+# Desteklenen Ubuntu kararını ArduPilot'un kendi betiği verir. Betik kod adını
+# tanımazsa (ör. Ubuntu 26.04 resolute) hata verebilir; bu durumda kurulum DURMAZ.
+# Derleme için gereken empy/pexpect/pymavlink zaten 3. adımda .venv içine kuruldu.
 ON_GEREKSINIM_TAMAM=0
 if [[ -f "Tools/environment_install/install-prereqs-ubuntu.sh" ]]; then
   if USER="${USER:-$(whoami)}" Tools/environment_install/install-prereqs-ubuntu.sh -y; then
@@ -135,7 +147,7 @@ fi
 
 if [[ "$ON_GEREKSINIM_TAMAM" -ne 1 ]]; then
   echo "[UYARI] YEDEK ADIM: eksik olabilecek temel apt paketleri tek tek kuruluyor."
-  echo "        (Bir paket bu sürümde yoksa atlanır; MAVProxy/pymavlink 5. adımda .venv'e kurulur.)"
+  echo "        (Bir paket bu sürümde yoksa atlanır; MAVProxy/pymavlink 3. adımda .venv'e kuruldu.)"
   YEDEK_PAKETLER=(python3-venv build-essential ccache python3-wxgtk4.0 python3-dev libtool pkg-config)
   KURULAMAYAN=()
   for paket in "${YEDEK_PAKETLER[@]}"; do
@@ -150,30 +162,28 @@ if [[ "$ON_GEREKSINIM_TAMAM" -ne 1 ]]; then
     echo "[UYARI] Kurulamayan paketler: ${KURULAMAYAN[*]}"
     echo "        python3-wxgtk4.0 yalnızca harita/konsol penceresi içindir; veri üretimi için şart değildir."
   fi
-  echo "[UYARI] ArduPilot ön gereksinim betiği tam çalışmadı. Derleme (4. adım) hata verirse"
+  echo "[UYARI] ArduPilot ön gereksinim betiği tam çalışmadı. Derleme (5. adım) hata verirse"
   echo "        betiğin çıktısını inceleyin ve belgeler/KURULUM.md'deki notlara bakın."
 fi
-# PATH güncellemesi için profili yükle (varsa)
-# shellcheck disable=SC1090
-source "${HOME}/.profile" 2>/dev/null || true
-tamam "Ön gereksinimler adımı tamamlandı."
+# sim_vehicle.py (Tools/autotest) PATH içinde yoksa ~/.profile ve ~/.bashrc'ye ekle
+AUTOTEST_YOL="$ARDUPILOT_DIZIN/Tools/autotest"
+EXPORT_SATIR="export PATH=\"$AUTOTEST_YOL:\$PATH\""
+for PROFIL_DOSYA in "${HOME}/.profile" "${HOME}/.bashrc"; do
+  if [[ -f "$PROFIL_DOSYA" ]] && ! grep -Fq "$AUTOTEST_YOL" "$PROFIL_DOSYA" 2>/dev/null; then
+    echo "$EXPORT_SATIR" >> "$PROFIL_DOSYA"
+  fi
+done
+export PATH="$AUTOTEST_YOL:$PATH"
+# install-prereqs başka bir sanal ortam etkinleştirmiş olabileceği için repo .venv'sini tekrar etkinleştir
+# shellcheck disable=SC1091
+source "$REPO_KOK/.venv/bin/activate"
+tamam "Ön gereksinimler ve PATH adımı tamamlandı."
 
-bilgi "4/6 ArduPlane SITL derleniyor (15-30 dk sürebilir)..."
+bilgi "5/6 ArduPlane SITL derleniyor (15-30 dk sürebilir)..."
 cd "$ARDUPILOT_DIZIN"
 ./waf configure --board sitl
 ./waf plane
 tamam "ArduPlane SITL derlendi."
-
-bilgi "5/6 Repo sanal ortamı (.venv) oluşturuluyor..."
-cd "$REPO_KOK"
-if [[ ! -d ".venv" ]]; then
-  python3 -m venv .venv
-fi
-# shellcheck disable=SC1091
-source .venv/bin/activate
-pip install --upgrade pip
-pip install -r requirements.txt
-tamam "Sanal ortam ve Python bağımlılıkları kuruldu."
 
 bilgi "6/6 Kurulum özeti"
 cat <<OZET
