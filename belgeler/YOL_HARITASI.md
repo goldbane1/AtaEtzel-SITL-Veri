@@ -705,7 +705,8 @@ tamamlanmış sayılamaz.
   (`--normal 40 --saldirili 50`), ~6,9 saat. Hacim 2026-11-08'de kesinleşti.
 - Tüm makinelerde `Plane-4.7.2` ve aynı repo commit'i kullanıldığını doğrula.
 - Verileri `VERI_PAYLASIMI.md`'ye göre birleştir; numara tekrarı denetimini çalıştır.
-- Ekip makineleri yalnızca uçuşları üretir (`--no-isleme`) ve Batuhan'a gönderir.
+- Ekip makineleri yalnızca uçuşları üretir (`--no-isleme`) ve Batuhan'a gönderir. Komutlar:
+  `G8_AGENT_KOMUTLARI.md`.
 - Birleştirme makinesinde (Batuhan) `etiketle` → `oznitelik` → `bol` → `dogrula`.
 - Rapor: tür × profil dağılımı, başarısız uçuş oranı, toplam uçuş saati, pencere
   sayısı, etiket dağılımı.
