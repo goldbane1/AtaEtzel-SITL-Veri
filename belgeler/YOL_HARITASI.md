@@ -42,7 +42,7 @@ Kurallar:
 | [x] | G6.5 | Toplu üretim |
 | [x] | G6.6 | Değerlendirme bölmeleri |
 | [x] | G7 | Uçtan uca doğrulama |
-| [ ] | G8 | Tam veri seti üretimi |
+| [x] | G8 | Tam veri seti üretimi |
 
 Bir görev bitince hem aşağıdaki kutucuğu hem bu tablodaki satırı `[x]` yapın.
 
@@ -678,7 +678,7 @@ yeniden uçuruldu (`F127`); uyku engeli ve donma kontrolleri eklendi.
 
 ## G8 — Tam veri seti üretimi
 
-- [ ] **Durum**
+- [x] **Durum**
 
 **Amaç:** G7 hattın çalıştığını gösterir ama değerlendirme için gereken veriyi
 üretmez. Hedef sayılar ve makineler arası birleştirme tanımlı olmadan veri seti
@@ -726,4 +726,6 @@ zamanlamasını öğrenebilir; uçuşlar makinelere dengeli dağıtılmalıdır.
 **Etkilenen dosyalar:** `belgeler/UCUS_NUMARALARI.md`, `belgeler/VERI_PAYLASIMI.md`,
 ve rapor belgesi (yeni, yeri görevde belirlenir)
 
-**Sonuç:** —
+**Sonuç:** 2026-11-11 — Tamamlandı. 5 makinede 450 uçuş (200 normal, tür başına 50), başarısız 0.
+Numara tekrarı yok, `dogrula.py` 450/450 TAMAM, 118.942 pencere, 8 senaryonun hiçbirinde test kümesi
+boş değil. `pytest` 345 test geçti. Rapor: [G8_RAPOR.md](G8_RAPOR.md).
